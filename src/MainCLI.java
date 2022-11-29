@@ -45,7 +45,7 @@ public class MainCLI {
     private static void loginMenu(Connection connection) {
         // Main Menu Screen
         clearConsole();
-        System.out.println("MyMusicList");
+        System.out.println("MyMusicList Login Menu");
         System.out.println("1: Login with existing user");
         System.out.println("2: Register new user");
         System.out.println("3: Exit");
@@ -95,12 +95,12 @@ public class MainCLI {
             } else
                 throw new Exception("Username incorrect or not found.");
         } catch (SQLException e) {
-            System.out.println("Problems with SQL JDBC. Returning to Main Menu.");
+            System.out.println("Problems with SQL JDBC. Returning to Login Menu.");
             e.printStackTrace();
             scanner.nextLine();
             loginMenu(connection);
         } catch (Exception e) {
-            System.out.println("Username was incorrect or not found. Returning to Main Menu.");
+            System.out.println("Username was incorrect or not found. Returning to Login Menu.");
             scanner.nextLine();
             loginMenu(connection);
         }
@@ -131,11 +131,13 @@ public class MainCLI {
             try {
                 int sqlState = Integer.parseInt(e.getSQLState());
                 if (sqlState == 23000) { // Integrity constraint violation
-                    System.out.println("Username already exists. Either login or try a different username. Returning to Main Menu.");
+                    System.out.println("Username already exists. Either login or try a different username. Returning to Login Menu.");
+                    scanner.nextLine();
+                    loginMenu(connection);
                 } else
                     throw new Exception("Other SQL Exception");
             } catch (Exception ex) {
-                System.out.println("Problems with SQL JDBC. Returning to Main Menu.");
+                System.out.println("Problems with SQL JDBC. Returning to Login Menu.");
                 e.printStackTrace();
                 scanner.nextLine();
                 loginMenu(connection);
