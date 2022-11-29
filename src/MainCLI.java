@@ -52,6 +52,7 @@ public class MainCLI {
 
         try {
             int input = scanner.nextInt();
+            scanner.nextLine(); // Read EOF character
             if (input != 1 && input != 2 && input != 3)
                 throw new InputMismatchException("Incorrect input given");
             clearConsole();
@@ -73,11 +74,11 @@ public class MainCLI {
     private static void loginScreen(Connection connection) {
         clearConsole();
         System.out.println("MyMusicList Login");
-        System.out.println("Please enter your username: ");
+        System.out.print("Please enter your username: ");
         String username = scanner.nextLine();
 
         try {
-            String sql = "SELECT dbo.login_with_username('?');";
+            String sql = "SELECT dbo.login_with_username(?);";
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
 
             preparedStatement.setString(1, username);
@@ -90,6 +91,7 @@ public class MainCLI {
                 throw new Exception("Username incorrect or not found.");
         } catch (SQLException e) {
             System.out.println("Problems with SQL JDBC. Returning to Main Menu.");
+            e.printStackTrace();
             scanner.nextLine();
             mainMenu(connection);
         } catch (Exception e) {
