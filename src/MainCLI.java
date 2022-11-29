@@ -14,15 +14,11 @@ public class MainCLI {
     // TODO Attribution required https://stackoverflow.com/questions/2979383/how-to-clear-the-console
     private static void clearConsole() {
         try {
-            final String os = System.getProperty("os.name");
-
-            if (os.contains("Windows")) {
-                Runtime.getRuntime().exec("cls");
-            } else {
+            if (System.getProperty("os.name").contains("Windows"))
+                new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+            else
                 Runtime.getRuntime().exec("clear");
-            }
-        }
-        catch (final Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -42,5 +38,6 @@ public class MainCLI {
             System.out.println("Failed to connect to database. Exiting...");
             e.printStackTrace();
         }
+        input.close();
     }
 }
