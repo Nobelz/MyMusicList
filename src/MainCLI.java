@@ -61,8 +61,10 @@ public class MainCLI {
                 loginScreen(connection);
             else if (input == 2)
                 registerScreen(connection);
-            else
+            else {
+                connection.close();
                 System.exit(0); // Exits program
+            }
 
         } catch (Exception e) {
             System.out.println("Incorrect data entered. Try Again.");
@@ -125,7 +127,8 @@ public class MainCLI {
             ResultSet resultSet = preparedStatement.getGeneratedKeys();
 
             while (resultSet.next()) {
-                System.out.println("Generated: " + resultSet.getString(1));
+                int userID = Integer.parseInt(resultSet.getString(1));
+                mainMenu(connection, userID);
             }
         } catch (SQLException e) {
             try {
@@ -151,5 +154,8 @@ public class MainCLI {
 
     private static void mainMenu(Connection connection, int userID) {
         // TODO implement
+        System.out.println(userID);
+        System.out.println("Not Implemented");
+        System.exit(0);
     }
 }
