@@ -34,7 +34,7 @@ public class MainCLI {
             scanner.nextLine();
             clearConsole();
 
-            mainMenu(connection);
+            loginMenu(connection);
         } catch (SQLException e) {
             System.out.println("Failed to connect to database. Exiting...");
             e.printStackTrace();
@@ -42,7 +42,7 @@ public class MainCLI {
         scanner.close();
     }
 
-    private static void mainMenu(Connection connection) {
+    private static void loginMenu(Connection connection) {
         // Main Menu Screen
         clearConsole();
         System.out.println("MyMusicList");
@@ -67,7 +67,7 @@ public class MainCLI {
         } catch (Exception e) {
             System.out.println("Incorrect data entered. Try Again.");
             scanner.nextLine();
-            mainMenu(connection);
+            loginMenu(connection);
         }
     }
 
@@ -86,22 +86,67 @@ public class MainCLI {
 
             ResultSet resultSet = preparedStatement.getResultSet();
             if (resultSet.next()) {
-                System.out.println(resultSet.getString(1));
+                String result = resultSet.getString(1);
+                if (result.equals("null"))
+                    throw new Exception("Username incorrect or not found.");
+
+                int userID = Integer.parseInt(result);
+                mainMenu(connection, userID);
             } else
                 throw new Exception("Username incorrect or not found.");
         } catch (SQLException e) {
             System.out.println("Problems with SQL JDBC. Returning to Main Menu.");
             e.printStackTrace();
             scanner.nextLine();
-            mainMenu(connection);
+            loginMenu(connection);
         } catch (Exception e) {
             System.out.println("Username was incorrect or not found. Returning to Main Menu.");
             scanner.nextLine();
-            mainMenu(connection);
+            loginMenu(connection);
         }
     }
 
     private static void registerScreen(Connection connection) {
+        clearConsole();
+        System.out.println("MyMusicList Register");
+        System.out.print("Please enter your username: ");
+        String username = scanner.nextLine();
+        System.out.print("Please enter your name: ");
+        String name = scanner.nextLine();
 
+        try {
+            String sql = "INSERT INTO music_user(username, name) VALUES(?, ?)";
+            PreparedStatement preparedStatement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+
+            preparedStatement.setString(1, username);
+            preparedStatement.setString(2, name);
+            preparedStatement.execute();
+
+            ResultSet resultSet = preparedStatement.getGeneratedKeys();
+
+            while (resultSet.next()) {
+                System.out.println("Generated: " + resultSet.getString(1));
+            }
+        } catch (SQLException e) {
+            try {
+                int sqlState = Integer.parseInt(e.getSQLState());
+                e.printStackTrace();
+                System.err.println(e.getMessage());
+                System.err.println(e.getSQLState());
+            } catch (Exception ex) {
+                System.out.println("Problems with SQL JDBC. Returning to Main Menu.");
+                e.printStackTrace();
+                scanner.nextLine();
+                loginMenu(connection);
+            }
+        } catch (Exception e) {
+            System.out.println("Username was incorrect or not found. Returning to Main Menu.");
+            scanner.nextLine();
+            loginMenu(connection);
+        }
+    }
+
+    private static void mainMenu(Connection connection, int userID) {
+        // TODO implement
     }
 }
