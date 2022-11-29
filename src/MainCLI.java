@@ -130,9 +130,10 @@ public class MainCLI {
         } catch (SQLException e) {
             try {
                 int sqlState = Integer.parseInt(e.getSQLState());
-                e.printStackTrace();
-                System.err.println(e.getMessage());
-                System.err.println(e.getSQLState());
+                if (sqlState == 23000) { // Integrity constraint violation
+                    System.out.println("Username already exists. Either login or try a different username. Returning to Main Menu.");
+                } else
+                    throw new Exception("Other SQL Exception");
             } catch (Exception ex) {
                 System.out.println("Problems with SQL JDBC. Returning to Main Menu.");
                 e.printStackTrace();
