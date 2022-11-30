@@ -213,7 +213,7 @@ public class MainCLI {
                     //int ID = codes[1];
 
                     // TODO implement search functionality (song, playlist, album, artist, user)
-                    break;
+                    return 1;
                 case 2:
                     int playlistID = 0;
                     while (playlistID == 0) {
@@ -223,7 +223,7 @@ public class MainCLI {
                             playlistID = 0;
                         }
                     }
-                    break;
+                    return 1;
                 case 3:
                     int songID = recommendationMenu(connection, userID);
 
@@ -240,13 +240,11 @@ public class MainCLI {
                         while (artistMenu(connection, userID) == 1);
                     else
                         return 0;
-                    break;
                 case 7:
                     if (isArtist)
                         return 0;
                     else
                         System.exit(0);
-                    break;
                 default:
                     System.exit(0);
             }
