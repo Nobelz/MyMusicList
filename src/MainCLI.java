@@ -284,13 +284,11 @@ public class MainCLI {
         String query = scanner.nextLine();
 
         try {
-            String sql = "EXEC search @ID=" + userID + ", @query = ?, @num = 10;";
-            PreparedStatement statement = connection.prepareStatement(sql);
+            String sql = "{call search (" + userID + ", ?, 10, 1, 'y', 'y', 'y', 'y', 'y')}"; 
+            CallableStatement callableStatement = connection.prepareCall(sql);  
 
-            statement.setString(1, query);
-            statement.execute();
-
-            ResultSet resultSet = statement.getResultSet();
+            callableStatement.setString(1, query);
+            ResultSet resultSet = callableStatement.executeQuery();
 
             LinkedList<SearchResult> results = new LinkedList<>();
 
@@ -332,12 +330,12 @@ public class MainCLI {
 
             clearConsole();
             System.out.println("Results:");
-            System.out.printf("    %10s %30s\n", "Type", "Name");
+            System.out.printf("    %-10s %-30s\n", "Type", "Name");
             for (i = 0; i < resultsArray.length; i++) {
                 if (i < 10)
-                    System.out.printf(i + ":  %10s %30s\n", resultsArray[i].getType(), resultsArray[i].getName());
+                    System.out.printf(i + ":  %-10s %-30s\n", resultsArray[i].getType(), resultsArray[i].getName());
                 else
-                    System.out.printf(i + ": %10s %30s\n", resultsArray[i].getType(), resultsArray[i].getName());
+                    System.out.printf(i + ": %-10s %-30s\n", resultsArray[i].getType(), resultsArray[i].getName());
             }
             System.out.println(i + ": Return to Main Menu");
             System.out.print("Select an Entry: ");
@@ -360,7 +358,7 @@ public class MainCLI {
             return new int[] {-1};
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Main Menu.");
-            e.printStackTrace(System.err);
+            e.printStackTrace();
             scanner.nextLine();
             return new int[] {-1};
         }
