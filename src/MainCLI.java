@@ -1,5 +1,6 @@
 import java.sql.*;
 import java.util.InputMismatchException;
+import java.util.LinkedList;
 import java.util.Scanner;
 
 public class MainCLI {
@@ -267,9 +268,102 @@ public class MainCLI {
         }
     }
 
+    /* TODO Codes:
+        -1: Return to Main Menu, Error occurred
+        0: No error, Return to Main menu
+        1: Song (song_id)
+        2: Playlist (user_id, playlist_id)
+        3: Album (album_id)
+        4: User (user_id)
+        5: Artist (artist_id)
+     */
     private static int[] searchScreen(Connection connection, int userID) {
-        // TODO implement
-        throw new UnsupportedOperationException("Not implemented yet");
+        clearConsole();
+        System.out.println("Search MyMusicList Database");
+        System.out.println("Please enter search keyword: ");
+        String query = scanner.nextLine();
+
+        try {
+            String sql = "EXEC search @ID=" + userID + ", @query = ?, @num = 10;";
+            PreparedStatement statement = connection.prepareStatement(sql);
+
+            statement.setString(1, query);
+            statement.execute();
+
+            ResultSet resultSet = statement.getResultSet();
+
+            LinkedList<SearchResult> results = new LinkedList<>();
+
+            int i = 0;
+            while (resultSet.next()) {
+                String type = resultSet.getString(1);
+                int ID = resultSet.getInt(2);
+                int secID = resultSet.getInt(3);
+                String name = resultSet.getString(4);
+
+                switch (type) {
+                    case "song":
+                        results.add(new SearchResult(SearchResult.Entity.SONG, ID, 0, name));
+                        break;
+                    case "playlist":
+                        results.add(new SearchResult(SearchResult.Entity.PLAYLIST, ID, secID, name));
+                        break;
+                    case "album":
+                        results.add(new SearchResult(SearchResult.Entity.ALBUM, ID, 0, name));
+                        break;
+                    case "user":
+                        results.add(new SearchResult(SearchResult.Entity.USER, ID, 0, name));
+                        break;
+                    case "artist":
+                        results.add(new SearchResult(SearchResult.Entity.ARTIST, ID, 0, name));
+                }
+
+                i++;
+            }
+
+            if (i == 0) {
+                System.out.println("No results found for that query. Returning to Main Menu,");
+                scanner.nextLine();
+                return new int[] {0};
+            }
+
+            SearchResult[] resultsArray = new SearchResult[i];
+            results.toArray(resultsArray);
+
+            clearConsole();
+            System.out.println("Results:");
+            System.out.printf("    %10s %30s\n", "Type", "Name");
+            for (i = 0; i < resultsArray.length; i++) {
+                if (i < 10)
+                    System.out.printf(i + ":  %10s %30s\n", resultsArray[i].getType(), resultsArray[i].getName());
+                else
+                    System.out.printf(i + ": %10s %30s\n", resultsArray[i].getType(), resultsArray[i].getName());
+            }
+            System.out.println(i + ": Return to Main Menu");
+            System.out.print("Select an Entry: ");
+            int input = scanner.nextInt();
+
+            if (input < 1 || input > i)
+                throw new InputMismatchException("Incorrect input given");
+
+            if (input == i)
+                return new int[] {0};
+            else if (resultsArray[i].getType().equals(SearchResult.Entity.PLAYLIST))
+                return new int[] {2, resultsArray[i].getID(), resultsArray[i].getSecID()};
+            else
+                return new int[] {resultsArray[i].getType().getIntValue(), resultsArray[i].getID()};
+
+        } catch (InputMismatchException e) {
+            System.out.println("Incorrect input given. Returning to Main Menu.");
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+            return new int[] {-1};
+        } catch (SQLException e) {
+            System.out.println("Error connecting to SQL database. Returning to Main Menu.");
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+            return new int[] {-1};
+        }
     }
 
     private static int playlistMenu(Connection connection, int userID) {
