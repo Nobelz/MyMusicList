@@ -224,9 +224,14 @@ public class MainCLI {
                     // TODO implement search functionality (song, playlist, album, artist, user)
                     break;
                 case 2:
-                    int playlistID = playlistMenu(connection, userID);
-
-                    // TODO implement playlist functionality
+                    int playlistID = 0;
+                    while (playlistID == 0) {
+                        playlistID = playlistMenu(connection, userID);
+                        if (playlistID > 0) {
+                            viewPlaylist(connection, userID, playlistID, true);
+                            playlistID = 0;
+                        }
+                    }
                     break;
                 case 3:
                     int songID = recommendationMenu(connection, userID);
@@ -405,22 +410,22 @@ public class MainCLI {
                 throw new InputMismatchException("Incorrect input given");
 
             if (input == i + 2)
-                return 0;
+                return -1;
             else if (input == i + 1) {
-                // TODO Create playlist screen
-                return 0; // CHange
+                createPlaylistScreen(connection, userID);
+                return 0;
             } else
                 return playlistIDArray[input - 1];
         } catch (InputMismatchException e) {
             System.out.println("Incorrect input given. Returning to Main Menu.");
             e.printStackTrace(System.err);
             scanner.nextLine();
-            return -1;
+            return -2;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Main Menu.");
             e.printStackTrace(System.err);
             scanner.nextLine();
-            return -1;
+            return -2;
         }
     }
 
@@ -440,6 +445,50 @@ public class MainCLI {
     }
 
     private static int artistMenu(Connection connection, int userID) {
+        // TODO implement
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    private static void createPlaylistScreen(Connection connection, int userID) {
+        clearConsole();
+        try {
+            System.out.println("Create New Playlist ");
+            System.out.print("What is the name of your playlist? ");
+            String name = scanner.nextLine();
+            System.out.print("Should your playlist be public? 'y' or 'n': ");
+            String privacy = scanner.nextLine();
+
+            if (privacy.length() != 1 || (privacy.charAt(0) != 'y' && privacy.charAt(0) != 'n'))
+                throw new InputMismatchException("Incorrect privacy input");
+
+            String sql = "SELECT max(playlist_id) + 1 FROM playlist WHERE user_id = " + userID;
+            Statement statement = connection.createStatement();
+            statement.execute(sql);
+
+            ResultSet resultSet = statement.getResultSet();
+
+            int playlistID = (resultSet.next()) ? resultSet.getInt(1) : 1;
+            sql = "INSERT INTO playlist(user_id, playlist_id, name, is_public) VALUES(" + userID + ", " + playlistID +
+                    ", " + "?, ?)";
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+
+            preparedStatement.setString(1, name);
+            preparedStatement.setString(2, privacy);
+            preparedStatement.execute();
+
+            System.out.println("Created new playlist. Returning to Playlist Menu.");
+        } catch (InputMismatchException e) {
+            System.out.println("Incorrect input entered. Returning to Playlist Menu.");
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+        } catch (SQLException e) {
+            System.out.println("Error connecting to SQL database. Returning to Playlist Menu.");
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+        }
+    }
+
+    private static int viewPlaylist(Connection connection, int userID, int playlistID, boolean canEdit) {
         // TODO implement
         throw new UnsupportedOperationException("Not implemented yet");
     }
