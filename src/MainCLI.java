@@ -60,12 +60,12 @@ public class MainCLI {
             if (input == 1) {
                 int userID = loginScreen(connection);
                 if (userID > 0) {
-                    while (mainMenu(connection, userID) == 1) {}
+                    while (mainMenu(connection, userID) == 1);
                 }
             } else if (input == 2) {
                 int userID = registerScreen(connection);
                 if (userID > 0) {
-                    while (mainMenu(connection, userID) == 1) {}
+                    while (mainMenu(connection, userID) == 1);
                 }
             } else {
                 connection.close();
@@ -99,16 +99,17 @@ public class MainCLI {
 
             ResultSet resultSet = preparedStatement.getResultSet();
 
-            if (resultSet.wasNull())
-                throw new Exception("Username incorrect or not found.");
-
             if (resultSet.next()) {
                 String result = resultSet.getString(1);
 
+                if (resultSet.wasNull())
+                    throw new Exception("Username incorrect or not found.");
+
                 int userID = Integer.parseInt(result);
                 return userID;
-            } else
-                throw new Exception("Username incorrect or not found.");
+            }
+
+            throw new Exception("Username incorrect or not found.");
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Login Menu.");
             e.printStackTrace(System.err);
@@ -176,19 +177,22 @@ public class MainCLI {
 
             ResultSet resultSet = statement.getResultSet();
 
-            if (resultSet.wasNull())
-                throw new Exception("Could not find music_user user_id");
-
             String name = "";
             while (resultSet.next()) {
                 name = resultSet.getString("name");
             }
+
+            if (resultSet.wasNull())
+                throw new Exception("Could not find music_user user_id");
 
             sql = "SELECT artist_id FROM artist WHERE artist_id = " + userID + ";";
             statement.execute(sql);
 
             resultSet = statement.getResultSet();
 
+            while (resultSet.next()) {
+                resultSet.getString(1);
+            }
             boolean isArtist = !resultSet.wasNull();
 
             clearConsole();
@@ -233,17 +237,14 @@ public class MainCLI {
                     // TODO implement playlist functionality
                     break;
                 case 4:
-                    while (queryMenu(connection, userID) == 1) {
-                    }
+                    while (queryMenu(connection, userID) == 1);
                     break;
                 case 5:
-                    while (profileSettings(connection, userID) == 1) {
-                    }
+                    while (profileSettings(connection, userID) == 1);
                     break;
                 case 6:
                     if (isArtist)
-                        while (artistMenu(connection, userID) == 1) {
-                        }
+                        while (artistMenu(connection, userID) == 1);
                     else
                         return 0;
                     break;
