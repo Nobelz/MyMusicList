@@ -280,7 +280,7 @@ public class MainCLI {
     private static int[] searchScreen(Connection connection, int userID) {
         clearConsole();
         System.out.println("Search MyMusicList Database");
-        System.out.println("Please enter search keyword: ");
+        System.out.print("Please enter search keyword: ");
         String query = scanner.nextLine();
 
         try {
@@ -320,7 +320,7 @@ public class MainCLI {
             }
 
             if (i == 0) {
-                System.out.println("No results found for that query. Returning to Main Menu,");
+                System.out.println("No results found for that query. Returning to Main Menu.");
                 scanner.nextLine();
                 return new int[] {0};
             }
@@ -332,24 +332,25 @@ public class MainCLI {
             System.out.println("Results:");
             System.out.printf("    %-10s %-30s\n", "Type", "Name");
             for (i = 0; i < resultsArray.length; i++) {
-                if (i < 10)
-                    System.out.printf(i + ":  %-10s %-30s\n", resultsArray[i].getType(), resultsArray[i].getName());
+                if (i < 9)
+                    System.out.printf((i + 1) + ":  %-10s %-30s\n", resultsArray[i].getType(), resultsArray[i].getName());
                 else
-                    System.out.printf(i + ": %-10s %-30s\n", resultsArray[i].getType(), resultsArray[i].getName());
+                    System.out.printf((i + 1) + ": %-10s %-30s\n", resultsArray[i].getType(), resultsArray[i].getName());
             }
-            System.out.println(i + ": Return to Main Menu");
+            System.out.println((i + 1) + ": Return to Main Menu");
             System.out.print("Select an Entry: ");
             int input = scanner.nextInt();
+            scanner.nextLine();
 
-            if (input < 1 || input > i)
+            if (input < 1 || input > (i + 1))
                 throw new InputMismatchException("Incorrect input given");
 
-            if (input == i)
+            if (input == i + 1)
                 return new int[] {0};
-            else if (resultsArray[i].getType().equals(SearchResult.Entity.PLAYLIST))
-                return new int[] {2, resultsArray[i].getID(), resultsArray[i].getSecID()};
+            else if (resultsArray[input - 1].getType().equals(SearchResult.Entity.PLAYLIST))
+                return new int[] {2, resultsArray[input - 1].getID(), resultsArray[input - 1].getSecID()};
             else
-                return new int[] {resultsArray[i].getType().getIntValue(), resultsArray[i].getID()};
+                return new int[] {resultsArray[input - 1].getType().getIntValue(), resultsArray[input - 1].getID()};
 
         } catch (InputMismatchException e) {
             System.out.println("Incorrect input given. Returning to Main Menu.");
@@ -358,15 +359,69 @@ public class MainCLI {
             return new int[] {-1};
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Main Menu.");
-            e.printStackTrace();
+            e.printStackTrace(System.err);
             scanner.nextLine();
             return new int[] {-1};
         }
     }
 
     private static int playlistMenu(Connection connection, int userID) {
-        // TODO implement
-        throw new UnsupportedOperationException("Not implemented yet");
+        clearConsole();
+        System.out.println("Playlists");
+        System.out.printf("    %-30s %-12s %-12s\n", "Name", "Songs Count", "Duration");
+
+        try {
+            String sql = "{call view_playlists (" + userID + ", 'n')}";
+            CallableStatement callableStatement = connection.prepareCall(sql);
+            ResultSet resultSet = callableStatement.executeQuery();
+
+            LinkedList<Integer> playlistIDs = new LinkedList<>();
+
+            int i = 0;
+            while (resultSet.next()) {
+                playlistIDs.add(resultSet.getInt(1));
+                if (i < 9)
+                    System.out.printf((i + 1) + ":  %-30s %-12s %-12s\n", resultSet.getString(2),
+                            resultSet.getInt(3), resultSet.getString(4));
+                else
+                    System.out.printf((i + 1) + ": %-30s %-12s %-12s\n", resultSet.getString(2),
+                            resultSet.getInt(3), resultSet.getString(4));
+                i++;
+            }
+
+            int[] playlistIDArray = playlistIDs.stream().mapToInt(j -> j).toArray();
+
+            if (playlistIDArray.length == 0) {
+                System.out.println("No Playlists to Display");
+            }
+
+            System.out.println((i + 1) + ": Create New Playlist");
+            System.out.println((i + 2) + ": Return to Main Menu");
+            System.out.print("Select an Entry: ");
+            int input = scanner.nextInt();
+            scanner.nextLine();
+
+            if (input < 1 || input > i + 2)
+                throw new InputMismatchException("Incorrect input given");
+
+            if (input == i + 2)
+                return 0;
+            else if (input == i + 1) {
+                // TODO Create playlist screen
+                return 0; // CHange
+            } else
+                return playlistIDArray[input - 1];
+        } catch (InputMismatchException e) {
+            System.out.println("Incorrect input given. Returning to Main Menu.");
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+            return -1;
+        } catch (SQLException e) {
+            System.out.println("Error connecting to SQL database. Returning to Main Menu.");
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+            return -1;
+        }
     }
 
     private static int recommendationMenu(Connection connection, int userID) {
