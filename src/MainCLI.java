@@ -61,14 +61,16 @@ public class MainCLI {
 
             if (input == 1) {
                 int userID = loginScreen(connection);
-                User user = authenticateUser(connection, userID);
+            
                 if (userID > 0) {
+                    User user = authenticateUser(connection, userID);
                     while (mainMenu(connection, user) == 1);
                 }
             } else if (input == 2) {
                 int userID = registerScreen(connection);
-                User user = authenticateUser(connection, userID);
+               
                 if (userID > 0) {
+                    User user = authenticateUser(connection, userID);
                     while (mainMenu(connection, user) == 1);
                 }
             } else {
