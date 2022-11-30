@@ -82,7 +82,15 @@ public class MMLTools {
     }
 
     public static Artist getArtist(Connection connection, int artistID) throws SQLException {
-        //TODO implement
-        throw new UnsupportedOperationException();
+        String sql = "{call get_artist_by_id (" + artistID + ")}";
+        CallableStatement callableStatement = connection.prepareCall(sql);
+
+        ResultSet resultSet = callableStatement.executeQuery();
+
+        if (resultSet.next())
+            return new Artist(artistID, resultSet.getString("username"),
+                    resultSet.getString("name"), resultSet.getString("join_date"));
+        else
+            throw new SQLException("User not found");
     }
 }

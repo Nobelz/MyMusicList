@@ -491,11 +491,9 @@ CREATE OR ALTER PROCEDURE get_user_by_id
 	@user_id int
 AS
 BEGIN
-	SELECT music_user.*, count(playlist.playlist_id) AS num_playlists
+	SELECT *
 	FROM music_user
-		JOIN playlist ON music_user.user_id = playlist.user_id
-	WHERE @user_id = music_user.user_id
-	GROUP BY music_user.user_id, music_user.name, music_user.username, music_user.join_date;
+	WHERE @user_id = music_user.user_id;
 END;
 GO
 
@@ -506,8 +504,7 @@ BEGIN
     SELECT artist.artist_id, music_user.name, music_user.username, music_user.join_date
     FROM artist
         JOIN music_user ON artist.artist_id = music_user.user_id
-    WHERE @artist_id = artist.artist_id
-    GROUP BY music_user.user_id, music_user.name, music_user.username, music_user.join_date;
+    WHERE @artist_id = artist.artist_id;
 END;
 GO
 

@@ -61,13 +61,15 @@ public class MainCLI {
 
             if (input == 1) {
                 int userID = loginScreen(connection);
+                User user = authenticateUser(connection, userID);
                 if (userID > 0) {
-                    while (mainMenu(connection, userID) == 1);
+                    while (mainMenu(connection, user) == 1);
                 }
             } else if (input == 2) {
                 int userID = registerScreen(connection);
+                User user = authenticateUser(connection, userID);
                 if (userID > 0) {
-                    while (mainMenu(connection, userID) == 1);
+                    while (mainMenu(connection, user) == 1);
                 }
             } else {
                 connection.close();
@@ -171,18 +173,28 @@ public class MainCLI {
         }
     }
 
-    private static int mainMenu(Connection connection, int userID) {
+    private static User authenticateUser(Connection connection, int userID) throws SQLException {
+        User user;
         try {
-            User user = MMLTools.getUser(connection, userID);
+            user = MMLTools.getArtist(connection, userID);
+        } catch (SQLException e1) {
+            user = MMLTools.getUser(connection, userID);
+        }
+
+        return user;
+    }
+
+    private static int mainMenu(Connection connection, User user) {
+        try {
             String name = user.getName();
 
-            // TODO change when getArtist() is implemented
-            String sql = "SELECT artist_id FROM artist WHERE artist_id = " + userID + ";";
-            Statement statement = connection.createStatement();
-            statement.execute(sql);
-
-            ResultSet resultSet = statement.getResultSet();
-            boolean isArtist = resultSet.wasNull();
+//            // TODO change when getArtist() is implemented
+//            String sql = "SELECT artist_id FROM artist WHERE artist_id = " + userID + ";";
+//            Statement statement = connection.createStatement();
+//            statement.execute(sql);
+//
+//            ResultSet resultSet = statement.getResultSet();
+            boolean isArtist = user instanceof Artist;
 
             clearConsole();
             System.out.println("Welcome, " + name + ".");
@@ -209,7 +221,7 @@ public class MainCLI {
 
             switch (input) {
                 case 1:
-                    int[] codes = searchScreen(connection, userID);
+                    int[] codes = searchScreen(connection, user);
                     int referralCode = codes[0];
                     //int ID = codes[1];
 
@@ -218,27 +230,28 @@ public class MainCLI {
                 case 2:
                     int playlistID = 0;
                     while (playlistID == 0) {
-                        playlistID = playlistMenu(connection, userID);
+                        playlistID = playlistMenu(connection, user);
                         if (playlistID > 0) {
-                            viewPlaylist(connection, userID, MMLTools.getPlaylist(connection, userID, playlistID, true));
+                            viewPlaylist(connection, user, MMLTools.getPlaylist(connection, user.getUserID(),
+                                    playlistID, true));
                             playlistID = 0;
                         }
                     }
                     return 1;
                 case 3:
-                    int songID = recommendationMenu(connection, userID);
+                    int songID = recommendationMenu(connection, user);
 
                     // TODO implement recommendation functionality
                     break;
                 case 4:
-                    while (queryMenu(connection, userID) == 1);
+                    while (queryMenu(connection, user) == 1);
                     break;
                 case 5:
-                    while (profileSettings(connection, userID) == 1);
+                    while (profileSettings(connection, user) == 1);
                     break;
                 case 6:
                     if (isArtist)
-                        while (artistMenu(connection, userID) == 1);
+                        while (artistMenu(connection, user) == 1);
                     else
                         return 0;
                 case 7:
@@ -272,14 +285,14 @@ public class MainCLI {
         4: User (user_id)
         5: Artist (artist_id)
      */
-    private static int[] searchScreen(Connection connection, int userID) {
+    private static int[] searchScreen(Connection connection, User user) {
         clearConsole();
         System.out.println("Search MyMusicList Database");
         System.out.print("Please enter search keyword: ");
         String query = scanner.nextLine();
 
         try {
-            String sql = "{call search (" + userID + ", ?, 10, 1, 'y', 'y', 'y', 'y', 'y')}"; 
+            String sql = "{call search (" + user.getUserID() + ", ?, 10, 1, 'y', 'y', 'y', 'y', 'y')}";
             CallableStatement callableStatement = connection.prepareCall(sql);  
 
             callableStatement.setString(1, query);
@@ -360,13 +373,13 @@ public class MainCLI {
         }
     }
 
-    private static int playlistMenu(Connection connection, int userID) {
+    private static int playlistMenu(Connection connection, User user) {
         clearConsole();
         System.out.println("Playlists");
         System.out.printf("    %-30s %-12s %-12s\n", "Name", "Song Count", "Duration");
 
         try {
-            String sql = "{call view_playlists (" + userID + ", 'n')}";
+            String sql = "{call view_playlists (" + user.getUserID() + ", 'n')}";
             CallableStatement callableStatement = connection.prepareCall(sql);
             ResultSet resultSet = callableStatement.executeQuery();
 
@@ -375,7 +388,7 @@ public class MainCLI {
             int i = 0;
             while (resultSet.next()) {
                 int playlistID = resultSet.getInt(1);
-                Playlist playlist = MMLTools.getPlaylist(connection, userID, playlistID, true);
+                Playlist playlist = MMLTools.getPlaylist(connection, user.getUserID(), playlistID, true);
                 playlistList.add(playlist);
 
                 if (i < 9)
@@ -406,7 +419,7 @@ public class MainCLI {
             if (input == i + 2)
                 return -1;
             else if (input == i + 1) {
-                createPlaylistScreen(connection, userID);
+                createPlaylistScreen(connection, user);
                 return 0;
             } else
                 return playlists[input - 1].getPlaylistID();
@@ -423,27 +436,27 @@ public class MainCLI {
         }
     }
 
-    private static int recommendationMenu(Connection connection, int userID) {
+    private static int recommendationMenu(Connection connection, User user) {
         // TODO implement
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
-    private static int queryMenu(Connection connection, int userID) {
+    private static int queryMenu(Connection connection, User user) {
         // TODO implement
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
-    private static int profileSettings(Connection connection, int userID) {
+    private static int profileSettings(Connection connection, User user) {
         // TODO implement
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
-    private static int artistMenu(Connection connection, int userID) {
+    private static int artistMenu(Connection connection, User user) {
         // TODO implement
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
-    private static void createPlaylistScreen(Connection connection, int userID) {
+    private static void createPlaylistScreen(Connection connection, User user) {
         clearConsole();
         try {
             System.out.println("Create New Playlist ");
@@ -456,7 +469,7 @@ public class MainCLI {
                 throw new InputMismatchException("Incorrect privacy input");
 
             // TODO Change to function
-            String sql = "SELECT max(playlist_id) + 1 FROM playlist WHERE user_id = " + userID;
+            String sql = "SELECT max(playlist_id) + 1 FROM playlist WHERE user_id = " + user.getUserID();
             Statement statement = connection.createStatement();
             statement.execute(sql);
 
@@ -464,7 +477,7 @@ public class MainCLI {
 
             // TODO Change to procedure
             int playlistID = (resultSet.next()) ? resultSet.getInt(1) : 1;
-            sql = "INSERT INTO playlist(user_id, playlist_id, name, is_public) VALUES(" + userID + ", " + playlistID +
+            sql = "INSERT INTO playlist(user_id, playlist_id, name, is_public) VALUES(" + user.getUserID() + ", " + playlistID +
                     ", " + "?, ?)";
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
 
@@ -484,7 +497,7 @@ public class MainCLI {
         }
     }
 
-    private static int viewPlaylist(Connection connection, int userID, Playlist playlist) {
+    private static int viewPlaylist(Connection connection, User user, Playlist playlist) {
         clearConsole();
 
         try {
