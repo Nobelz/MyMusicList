@@ -210,7 +210,7 @@ public class MainCLI {
                 case 1:
                     int[] codes = searchScreen(connection, userID);
                     int referralCode = codes[0];
-                    int ID = codes[1];
+                    //int ID = codes[1];
 
                     // TODO implement search functionality (song, playlist, album, artist, user)
                     break;
@@ -364,7 +364,7 @@ public class MainCLI {
     private static int playlistMenu(Connection connection, int userID) {
         clearConsole();
         System.out.println("Playlists");
-        System.out.printf("    %-30s %-12s %-12s\n", "Name", "Songs Count", "Duration");
+        System.out.printf("    %-30s %-12s %-12s\n", "Name", "Song Count", "Duration");
 
         try {
             String sql = "{call view_playlists (" + userID + ", 'n')}";
@@ -518,7 +518,7 @@ public class MainCLI {
     private static Playlist getPlaylist(Connection connection, int userID, int playlistID, boolean canEdit) throws SQLException {
         String sql = "{call get_playlist_by_id (" + userID + ", " + playlistID + ")}";
         CallableStatement callableStatement = connection.prepareCall(sql);
-        ResultSet playlistResultSet = callableStatement.getResultSet();
+        ResultSet playlistResultSet = callableStatement.executeQuery();
 
         if (playlistResultSet.next()) {
             User user = getUser(connection, userID);
@@ -553,7 +553,7 @@ public class MainCLI {
 
         if (resultSet.next())
             return new User(userID, resultSet.getString("username"), resultSet.getString("name"),
-                    resultSet.getString("date"));
+                    resultSet.getString("join_date"));
         else
             throw new SQLException("User not found");
     }
