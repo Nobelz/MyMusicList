@@ -113,14 +113,14 @@ BEGIN
 END
 GO
 
-CREATE OR ALTER FUNCTION num_plays_artist(@ID int)
+CREATE OR ALTER FUNCTION num_plays_album(@ID int)
 	RETURNS int
 AS
 BEGIN
 	DECLARE @total_plays int
 	SELECT @total_plays = sum(dbo.num_plays_song(song_id))
-		FROM song_artist
-		WHERE artist_id = @ID
+		FROM song_album
+		WHERE album_id = @ID
 	SELECT @total_plays = 
 		CASE
 			WHEN @total_plays IS NULL THEN 0
@@ -496,6 +496,18 @@ BEGIN
 		JOIN playlist ON music_user.user_id = playlist.user_id
 	WHERE @user_id = music_user.user_id
 	GROUP BY music_user.user_id, music_user.name, music_user.username, music_user.join_date;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE get_artist_by_id
+    @artist_id int
+AS
+BEGIN
+    SELECT artist.artist_id, music_user.name, music_user.username, music_user.join_date
+    FROM artist
+        JOIN music_user ON artist.artist_id = music_user.user_id
+    WHERE @artist_id = artist.artist_id
+    GROUP BY music_user.user_id, music_user.name, music_user.username, music_user.join_date;
 END;
 GO
 

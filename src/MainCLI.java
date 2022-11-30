@@ -35,6 +35,7 @@ public class MainCLI {
             scanner.nextLine();
             clearConsole();
 
+            // TODO Change to Return Codes
             loginMenu(connection);
         } catch (SQLException e) {
             System.out.println("Failed to connect to database. Exiting...");
