@@ -172,24 +172,15 @@ public class MainCLI {
 
     private static int mainMenu(Connection connection, int userID) {
         try {
-            String sql = "SELECT name FROM music_user WHERE user_id = " + userID + ";";
+            User user = getUser(connection, userID);
+            String name = user.getName();
+
+            // TODO change when getArtist() is implemented
+            String sql = "SELECT artist_id FROM artist WHERE artist_id = " + userID + ";";
             Statement statement = connection.createStatement();
             statement.execute(sql);
 
             ResultSet resultSet = statement.getResultSet();
-
-            if (resultSet.wasNull())
-                throw new Exception("Could not find music_user user_id");
-
-            String name = "";
-            while (resultSet.next()) {
-                name = resultSet.getString("name");
-            }
-
-            sql = "SELECT artist_id FROM artist WHERE artist_id = " + userID + ";";
-            statement.execute(sql);
-
-            resultSet = statement.getResultSet();
             boolean isArtist = resultSet.wasNull();
 
             clearConsole();
@@ -228,7 +219,7 @@ public class MainCLI {
                     while (playlistID == 0) {
                         playlistID = playlistMenu(connection, userID);
                         if (playlistID > 0) {
-                            viewPlaylist(connection, userID, playlistID, true);
+                            viewPlaylist(connection, userID, getPlaylist(connection, userID, playlistID, true));
                             playlistID = 0;
                         }
                     }
@@ -236,7 +227,7 @@ public class MainCLI {
                 case 3:
                     int songID = recommendationMenu(connection, userID);
 
-                    // TODO implement playlist functionality
+                    // TODO implement recommendation functionality
                     break;
                 case 4:
                     while (queryMenu(connection, userID) == 1);
@@ -380,23 +371,27 @@ public class MainCLI {
             CallableStatement callableStatement = connection.prepareCall(sql);
             ResultSet resultSet = callableStatement.executeQuery();
 
-            LinkedList<Integer> playlistIDs = new LinkedList<>();
+            LinkedList<Playlist> playlistList = new LinkedList<>();
 
             int i = 0;
             while (resultSet.next()) {
-                playlistIDs.add(resultSet.getInt(1));
+                int playlistID = resultSet.getInt(1);
+                Playlist playlist = getPlaylist(connection, userID, playlistID, true);
+                playlistList.add(playlist);
+
                 if (i < 9)
-                    System.out.printf((i + 1) + ":  %-30s %-12s %-12s\n", resultSet.getString(2),
-                            resultSet.getInt(3), resultSet.getString(4));
+                    System.out.printf((i + 1) + ":  %-30s %-12s %-12s\n", playlist.getName(),
+                            playlist.getNumSongs(), playlist.getDuration());
                 else
-                    System.out.printf((i + 1) + ": %-30s %-12s %-12s\n", resultSet.getString(2),
-                            resultSet.getInt(3), resultSet.getString(4));
+                    System.out.printf((i + 1) + ": %-30s %-12s %-12s\n", playlist.getName(),
+                            playlist.getNumSongs(), playlist.getDuration());
                 i++;
             }
 
-            int[] playlistIDArray = playlistIDs.stream().mapToInt(j -> j).toArray();
+            Playlist[] playlists = new Playlist[i];
+            playlistList.toArray(playlists);
 
-            if (playlistIDArray.length == 0) {
+            if (playlists.length == 0) {
                 System.out.println("No Playlists to Display");
             }
 
@@ -415,7 +410,7 @@ public class MainCLI {
                 createPlaylistScreen(connection, userID);
                 return 0;
             } else
-                return playlistIDArray[input - 1];
+                return playlists[input - 1].getPlaylistID();
         } catch (InputMismatchException e) {
             System.out.println("Incorrect input given. Returning to Main Menu.");
             e.printStackTrace(System.err);
@@ -461,12 +456,14 @@ public class MainCLI {
             if (privacy.length() != 1 || (privacy.charAt(0) != 'y' && privacy.charAt(0) != 'n'))
                 throw new InputMismatchException("Incorrect privacy input");
 
+            // TODO Change to function
             String sql = "SELECT max(playlist_id) + 1 FROM playlist WHERE user_id = " + userID;
             Statement statement = connection.createStatement();
             statement.execute(sql);
 
             ResultSet resultSet = statement.getResultSet();
 
+            // TODO Change to procedure
             int playlistID = (resultSet.next()) ? resultSet.getInt(1) : 1;
             sql = "INSERT INTO playlist(user_id, playlist_id, name, is_public) VALUES(" + userID + ", " + playlistID +
                     ", " + "?, ?)";
@@ -488,8 +485,114 @@ public class MainCLI {
         }
     }
 
-    private static int viewPlaylist(Connection connection, int userID, int playlistID, boolean canEdit) {
-        // TODO implement
-        throw new UnsupportedOperationException("Not implemented yet");
+    private static int viewPlaylist(Connection connection, int userID, Playlist playlist) {
+        clearConsole();
+
+        try {
+            // TODO Fix and Implement
+
+            throw new SQLException("Not implemented");
+//            ResultSet resultSet = statement.getResultSet();
+//
+//            if (resultSet.next()) {
+//                System.out.println(resultSet.getString(1));
+//
+//                String sql = "{call search (" + userID + ", ?, 10, 1, 'y', 'y', 'y', 'y', 'y')}";
+//                CallableStatement callableStatement = connection.prepareCall(sql);
+//
+//                callableStatement.setString(1, query);
+//                ResultSet resultSet = callableStatement.executeQuery();
+//
+//                LinkedList<SearchResult> results = new LinkedList<>();
+//
+//            } else
+//                throw new SQLException("Could not find playlist");
+        } catch (SQLException e) {
+            System.out.println("Error connecting to SQL database. Returning to Playlist Menu.");
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+            return -1;
+        }
+    }
+
+    private static Playlist getPlaylist(Connection connection, int userID, int playlistID, boolean canEdit) throws SQLException {
+        String sql = "{call get_playlist_by_id (" + userID + ", " + playlistID + ")}";
+        CallableStatement callableStatement = connection.prepareCall(sql);
+        ResultSet playlistResultSet = callableStatement.getResultSet();
+
+        if (playlistResultSet.next()) {
+            User user = getUser(connection, userID);
+
+            sql = "{call get_songs_by_playlist (" + userID + ", " + playlistID + ")}";
+            callableStatement = connection.prepareCall(sql);
+
+            ResultSet songResultSet = callableStatement.executeQuery();
+
+            LinkedList<Song> songList = new LinkedList<>();
+            int j = 0;
+            while (songResultSet.next()) {
+                songList.add(getSong(connection, songResultSet.getInt(1)));
+                j++;
+            }
+
+            Song[] songs = new Song[j];
+            songList.toArray(songs);
+
+            return new Playlist(user, playlistID, playlistResultSet.getInt("duration_value"),
+                    playlistResultSet.getString("duration"), playlistResultSet.getString("name"),
+                    songs, canEdit);
+        } else
+            throw new SQLException("Playlist not found");
+    }
+
+    private static User getUser(Connection connection, int userID) throws SQLException {
+        String sql = "{call get_user_by_id (" + userID + ")}";
+        CallableStatement callableStatement = connection.prepareCall(sql);
+
+        ResultSet resultSet = callableStatement.executeQuery();
+
+        if (resultSet.next())
+            return new User(userID, resultSet.getString("username"), resultSet.getString("name"),
+                    resultSet.getString("date"));
+        else
+            throw new SQLException("User not found");
+    }
+
+    private static Song getSong(Connection connection, int songID) throws SQLException {
+        String sql = "{call get_song_by_id (" + songID + ")}";
+        CallableStatement callableStatement = connection.prepareCall(sql);
+
+        ResultSet songResultSet = callableStatement.executeQuery();
+
+        if (songResultSet.next()) {
+            sql = "{call get_artists_by_song (" + songID + ")}";
+            callableStatement = connection.prepareCall(sql);
+
+            ResultSet artistResultSet = callableStatement.executeQuery();
+
+            LinkedList<Artist> artistList = new LinkedList<>();
+            int j = 0;
+            while (artistResultSet.next()) {
+                artistList.add(getArtist(connection, artistResultSet.getInt(1)));
+                j++;
+            }
+
+            Artist[] artists = new Artist[j];
+            artistList.toArray(artists);
+
+            if (artists.length == 0)
+                throw new SQLException("No artists found for song");
+
+            return new Song(songID, songResultSet.getInt("duration"),
+                    songResultSet.getString("duration_string"),
+                    songResultSet.getString("release_date"), songResultSet.getString("name"),
+                    artists);
+        } else
+            throw new SQLException("Song not found");
+    }
+
+    private static Artist getArtist(Connection connection, int artistID) throws SQLException {
+        //TODO implement
+        throw new UnsupportedOperationException();
     }
 }

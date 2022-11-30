@@ -1,4 +1,4 @@
-class SearchResult {
+public class SearchResult {
     private Entity type;
     private int ID;
     private int secID;
