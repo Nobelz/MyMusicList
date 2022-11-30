@@ -99,11 +99,11 @@ public class MainCLI {
 
             ResultSet resultSet = preparedStatement.getResultSet();
 
+            if (resultSet.wasNull())
+                throw new Exception("Username incorrect or not found.");
+
             if (resultSet.next()) {
                 String result = resultSet.getString(1);
-
-                if (resultSet.wasNull())
-                    throw new Exception("Username incorrect or not found.");
 
                 int userID = Integer.parseInt(result);
                 return userID;
@@ -177,23 +177,19 @@ public class MainCLI {
 
             ResultSet resultSet = statement.getResultSet();
 
+            if (resultSet.wasNull())
+                throw new Exception("Could not find music_user user_id");
+
             String name = "";
             while (resultSet.next()) {
                 name = resultSet.getString("name");
             }
 
-            if (resultSet.wasNull())
-                throw new Exception("Could not find music_user user_id");
-
             sql = "SELECT artist_id FROM artist WHERE artist_id = " + userID + ";";
             statement.execute(sql);
 
             resultSet = statement.getResultSet();
-
-            while (resultSet.next()) {
-                resultSet.getString(1);
-            }
-            boolean isArtist = !resultSet.wasNull();
+            boolean isArtist = resultSet.wasNull();
 
             clearConsole();
             System.out.println("Welcome, " + name + ".");
