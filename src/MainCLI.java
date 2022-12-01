@@ -664,7 +664,7 @@ public class MainCLI {
 
                 return 0;
             } else if (input == playlist.getNumSongs() + 1) {
-                System.out.print("Enter the numbers of the songs you want deleted, separated by commas: ");
+                System.out.print("Enter the numbers of the songs you want deleted, separated by commas, no spaces: ");
                 String line = scanner.nextLine();
                 String[] entries = line.split(",");
                 int[] songEntries = new int[entries.length];
@@ -680,7 +680,7 @@ public class MainCLI {
                 }
 
                 for (int i = 0; i < songEntries.length; i++) {
-                    String sql = "{call remove_from_playlist (" + songEntries[i] + ", " +
+                    String sql = "{call remove_from_playlist (" + playlist.getSongs()[songEntries[i]].getSongID() + ", " +
                             playlist.getUser().getUserID() + ", " + playlist.getPlaylistID() + ")}";
                     CallableStatement callableStatement = connection.prepareCall(sql);
                     callableStatement.execute();
@@ -807,6 +807,7 @@ public class MainCLI {
                     return 0;
                 case 2:
                     logListenScreen(connection, user, song);
+                    return 0;
                 case 3:
                 case 4:
                     makeRecommendationScreen(connection, user, song);
@@ -1023,7 +1024,7 @@ public class MainCLI {
         try {
             toUser = MMLTools.getUser(connection, username);
         } catch(SQLException e) {
-            System.out.println("Username not found. Returning to Recommendation Menu.");
+            System.out.println("Username not found. Returning.");
             e.printStackTrace(System.err);
             scanner.nextLine();
             return;
@@ -1033,12 +1034,12 @@ public class MainCLI {
             String sql = "{call make_recommendation (" + user.getUserID() + ", " + toUser.getUserID() + ", " +
                     song.getSongID() + ")}";
             CallableStatement callableStatement = connection.prepareCall(sql);
-            callableStatement.execute(sql);
+            callableStatement.execute();
 
             System.out.println("Successfully recommended " + song.getName() + " to " + toUser.getName() + ".");
             scanner.nextLine();
         } catch (NumberFormatException | InputMismatchException e) {
-            System.out.println("Incorrect data entered. Returning to Recommendation Menu.");
+            System.out.println("Incorrect data entered. Returning.");
             scanner = new Scanner(System.in);
             e.printStackTrace(System.err);
             scanner.nextLine();
@@ -1046,12 +1047,12 @@ public class MainCLI {
             try {
                 int sqlState = Integer.parseInt(e.getSQLState());
                 if (sqlState == 23000) { // Integrity constraint violation
-                    System.out.println("You already recommended this song to this user. Returning to Recommendation Menu.");
+                    System.out.println("You already recommended this song to this user. Returning.");
                     scanner.nextLine();
                 } else
                     throw new Exception("Other SQL Exception");
             } catch (Exception ex) {
-                System.out.println("Error connecting to SQL database. Returning to Recommendation Menu.");
+                System.out.println("Error connecting to SQL database. Returning.");
                 e.printStackTrace(System.err);
                 scanner.nextLine();
             }
