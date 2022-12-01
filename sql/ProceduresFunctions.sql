@@ -737,12 +737,14 @@ GO
 CREATE OR ALTER PROCEDURE view_albums
     @ID int
 AS
-SELECT album.album_id, album.name, count(song.song_id) AS num_songs, dbo.convert_seconds_to_string(sum(song.duration)) AS total_listening_time
-FROM playlist
-         LEFT JOIN song_playlist ON song_playlist.playlist_id = playlist.playlist_id AND song_playlist.user_id = playlist.user_id
-         LEFT JOIN song ON song.song_id = song_playlist.song_id
-WHERE playlist.user_id = @ID AND playlist.is_public IN (@restrict_public, 'y')
-GROUP BY playlist.playlist_id, playlist.name;
+BEGIN
+    SELECT album.album_id, album.name, count(song.song_id) AS num_songs, dbo.convert_seconds_to_string(sum(song.duration)) AS total_listening_time
+    FROM album
+             LEFT JOIN song_album ON song_album.album_id = album.album_id
+             LEFT JOIN song ON song.song_id = song_album.song_id
+    WHERE album.album_id = @ID
+    GROUP BY album.album_id, album.name;
+END;
 GO
 
 CREATE OR ALTER PROCEDURE get_album_by_id
