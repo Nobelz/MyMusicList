@@ -420,7 +420,6 @@ public class MainCLI {
             } else
                 return playlists[input - 1].getPlaylistID();
         } catch (NumberFormatException | InputMismatchException e) {
-            scanner = new Scanner(System.in);
             System.out.println("Incorrect input given. Please try again.");
             scanner = new Scanner(System.in);
             e.printStackTrace(System.err);
@@ -551,7 +550,6 @@ public class MainCLI {
                 return -2;
             else if (input == playlist.getNumSongs() + 3 ||
                     (input == playlist.getNumSongs() + 2 && playlist.getNumSongs() == 0)) {
-                clearConsole();
                 System.out.print("Are you sure you want to delete this playlist? 'y' or 'n': ");
                 String line = scanner.nextLine();
 
@@ -568,7 +566,7 @@ public class MainCLI {
 
                 System.out.println("Playlist deleted. Returning to Playlist Menu.");
                 scanner.nextLine();
-                return -1;
+                return -2;
             } else if (input == playlist.getNumSongs() + 2 ||
                     (input == playlist.getNumSongs() + 1 && playlist.getNumSongs() == 0)) {
                 if (playlist.isPublic())
