@@ -48,6 +48,19 @@ public class MMLTools {
             throw new SQLException("User not found");
     }
 
+    public static User getUser(Connection connection, String username) throws SQLException {
+        String sql = "{call get_user_by_username (" + username + ")}";
+        CallableStatement callableStatement = connection.prepareCall(sql);
+
+        ResultSet resultSet = callableStatement.executeQuery();
+
+        if (resultSet.next())
+            return new User(resultSet.getInt(1), username, resultSet.getString("name"),
+                    resultSet.getString("join_date"));
+        else
+            throw new SQLException("User not found");
+    }
+
     public static Song getSong(Connection connection, int songID) throws SQLException {
         String sql = "{call get_song_by_id (" + songID + ")}";
         CallableStatement callableStatement = connection.prepareCall(sql);

@@ -212,7 +212,7 @@ CREATE TABLE listens
 (
 	user_id int NOT NULL,
 	song_id int NOT NULL,
-	num_listens int NOT NULL DEFAULT 1,
+	num_listens int NOT NULL DEFAULT 1 CHECK (num_listens > 0),
 
 	CONSTRAINT listens_PK PRIMARY KEY (user_id, song_id),
 	CONSTRAINT listens_user_FK FOREIGN KEY (user_id)

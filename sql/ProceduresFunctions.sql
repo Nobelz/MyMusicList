@@ -613,3 +613,62 @@ BEGIN
 END;
 GO
 
+CREATE OR ALTER PROCEDURE get_user_by_username
+    @username varchar(30)
+AS
+BEGIN
+    SELECT *
+    FROM music_user
+    WHERE @username = username;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE make_recommendation
+    @from_id int,
+    @to_id int,
+    @song_id int
+AS
+BEGIN
+    INSERT INTO recommendation(from_id, to_id, song_id)
+    VALUES (@from_id, @to_id, @song_id);
+END;
+GO
+
+CREATE OR ALTER PROCEDURE add_listens
+    @user_id int,
+    @song_id int,
+    @num_listens int
+AS
+BEGIN
+    IF dbo.get_num_listens(@user_id, @song_id) = 0
+    BEGIN
+        INSERT INTO listens(user_id, song_id, num_listens)
+        VALUES (@user_id, @song_id, @num_listens);
+    END
+    ELSE
+    BEGIN
+        UPDATE listens
+        SET num_listens = num_listens + @num_listens
+        WHERE user_id = @user_id AND song_id = @song_id;
+    END
+END;
+GO
+
+CREATE OR ALTER FUNCTION get_num_listens(
+    @user_id int,
+    @song_id int)
+RETURNS int
+AS
+BEGIN
+    DECLARE @num_listens int
+    SELECT @num_listens = num_listens
+    FROM listens
+    WHERE user_id = @user_id AND song_id = @song_id
+    SELECT @num_listens =
+        CASE
+            WHEN @num_listens IS NULL THEN 0
+            ELSE @num_listens
+        END
+    RETURN @num_listens;
+END;
+GO

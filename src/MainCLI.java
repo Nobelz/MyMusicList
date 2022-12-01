@@ -197,7 +197,7 @@ public class MainCLI {
             System.out.println("Main Menu");
             System.out.println("1: Search MyMusicList Database");
             System.out.println("2: View/Edit Playlists");
-            System.out.println("3: View/Make Song Recommendations");
+            System.out.println("3: View Recommendations");
             System.out.println("4: Other Queries...");
             System.out.println("5: Profile Settings");
             if (isArtist) {
@@ -456,12 +456,11 @@ public class MainCLI {
         System.out.println("Recommendation Menu");
         System.out.println("1: View User Recommendations");
         System.out.println("2: View Auto-generated Recommendations");
-        System.out.println("3: Make Recommendations to Other Users");
-        System.out.println("4: Return to Main Menu");
+        System.out.println("3: Return to Main Menu");
 
         int input = scanner.nextInt();
         scanner.nextLine();
-        if (input < 1 || input > 4)
+        if (input < 1 || input > 3)
             throw new InputMismatchException("Incorrect input given");
 
         try {
@@ -492,8 +491,9 @@ public class MainCLI {
                         }
                     }
                     return 0;
+                default:
+                    return -2;
             }
-            return -2;
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect input given. Please try again.");
             scanner = new Scanner(System.in);
@@ -746,7 +746,7 @@ public class MainCLI {
             if (resultSet.next()) {
                 numPlaylists = resultSet.getInt(1);
             } else
-                throw new SQLException("No num plays found");
+                throw new SQLException("No num playlists found");
 
             sql = "SELECT dbo.num_albums_song(" + song.getSongID() + ")";
             statement = connection.createStatement();
@@ -757,7 +757,7 @@ public class MainCLI {
             if (resultSet.next()) {
                 numAlbums = resultSet.getInt(1);
             } else
-                throw new SQLException("No num plays found");
+                throw new SQLException("No num albums found");
 
             sql = "SELECT dbo.avg_rating_song(" + song.getSongID() + ")";
             statement = connection.createStatement();
@@ -771,7 +771,7 @@ public class MainCLI {
                 else
                     avgRating = resultSet.getFloat(1);
             } else
-                throw new SQLException("No num plays found");
+                throw new SQLException("No average rating found");
 
             System.out.println("Duration: " + song.getDuration());
             if (avgRating < 1)
@@ -789,20 +789,31 @@ public class MainCLI {
                 System.out.println("Found in " + numPlaylists + " albums");
 
             System.out.println("1: Add to Playlist");
-            System.out.println("2: Return");
+            System.out.println("2: Log Listen");
+            System.out.println("3: Review/Rate");
+            System.out.println("4: Recommend to Others");
+            System.out.println("5: Return");
 
             System.out.print("Select an Entry: ");
             int input = scanner.nextInt();
             scanner.nextLine(); // Read end line character
 
-            if (input != 1 && input != 2)
+            if (input < 1 || input > 5)
                 throw new InputMismatchException("Incorrect input given");
 
-            if (input == 1) {
-                addToPlaylist(connection, user, song);
-                return 0;
-            } else
-                return -2;
+            switch (input) {
+                case 1:
+                    addToPlaylist(connection, user, song);
+                    return 0;
+                case 2:
+                    logListenScreen(connection, user, song);
+                case 3:
+                case 4:
+                    makeRecommendationScreen(connection, user, song);
+                    return 0;
+                default:
+                    return -2;
+            }
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect menu output. Please try again.");
             scanner = new Scanner(System.in);
@@ -1000,6 +1011,92 @@ public class MainCLI {
             e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
+        }
+    }
+
+    private static void makeRecommendationScreen(Connection connection, User user, Song song) {
+        clearConsole();
+        System.out.print("Please enter the username of the user you want to recommend the song to: ");
+        String username = scanner.nextLine();
+
+        User toUser;
+        try {
+            toUser = MMLTools.getUser(connection, username);
+        } catch(SQLException e) {
+            System.out.println("Username not found. Returning to Recommendation Menu.");
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+            return;
+        }
+
+        try {
+            String sql = "{call make_recommendation (" + user.getUserID() + ", " + toUser.getUserID() + ", " +
+                    song.getSongID() + ")}";
+            CallableStatement callableStatement = connection.prepareCall(sql);
+            callableStatement.execute(sql);
+
+            System.out.println("Successfully recommended " + song.getName() + " to " + toUser.getName() + ".");
+            scanner.nextLine();
+        } catch (NumberFormatException | InputMismatchException e) {
+            System.out.println("Incorrect data entered. Returning to Recommendation Menu.");
+            scanner = new Scanner(System.in);
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+        } catch (SQLException e) {
+            try {
+                int sqlState = Integer.parseInt(e.getSQLState());
+                if (sqlState == 23000) { // Integrity constraint violation
+                    System.out.println("You already recommended this song to this user. Returning to Recommendation Menu.");
+                    scanner.nextLine();
+                } else
+                    throw new Exception("Other SQL Exception");
+            } catch (Exception ex) {
+                System.out.println("Error connecting to SQL database. Returning to Recommendation Menu.");
+                e.printStackTrace(System.err);
+                scanner.nextLine();
+            }
+        }
+    }
+
+    private static void logListenScreen(Connection connection, User user, Song song) {
+        clearConsole();
+        try {
+            System.out.print("How many listens do you want to log for this song? ");
+            int input = scanner.nextInt();
+            scanner.nextLine();
+
+            if (input < 0)
+                throw new InputMismatchException("Number of listens cannot be less than 0.");
+
+            String sql = "{call add_listens (" + user.getUserID() + ", " + song.getSongID() + ", " + input + ")}";
+            CallableStatement callableStatement = connection.prepareCall(sql);
+            callableStatement.execute();
+
+            sql = "SELECT dbo.get_num_listens (" + user.getUserID() + ", " + song.getSongID() + ")";
+            Statement statement = connection.createStatement();
+            statement.execute(sql);
+
+            ResultSet resultSet = statement.getResultSet();
+
+            if (resultSet.next()) {
+                int numListens = resultSet.getInt(1);
+                if (numListens == 1)
+                    System.out.println("You have now listened to " + song.getName() + " 1 time.");
+                else
+                    System.out.println("You have now listened to " + song.getName() + " " + numListens + " times.");
+
+                scanner.nextLine();
+            } else
+                throw new SQLException("INSERT or UPDATE did not work for listens");
+        } catch (NumberFormatException | InputMismatchException e) {
+            System.out.println("Incorrect data entered. Returning to Recommendation Menu.");
+            scanner = new Scanner(System.in);
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+        } catch (SQLException e) {
+            System.out.println("Error connecting to SQL database. Returning to Recommendation Menu.");
+            e.printStackTrace(System.err);
+            scanner.nextLine();
         }
     }
 }
