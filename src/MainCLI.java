@@ -230,7 +230,14 @@ public class MainCLI {
                             while (songID == 0 || songID == -1) {
                                 songID = viewPlaylist(connection, user, MMLTools.getPlaylist(connection, user.getUserID(),
                                     playlistID, true));
-                                    // TODO add viewSong
+
+                                if (songID > 0) {
+                                     int code = 0;
+                                     while (code == 0 || code == -1) {
+                                         code = viewSong(connection, user, MMLTools.getSong(connection, songID));
+                                     }
+                                     songID = 0;
+                                }
                             }
                             playlistID = 0;
                         }
