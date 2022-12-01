@@ -1110,7 +1110,8 @@ public class MainCLI {
         String review = "";
 
         try {
-            System.out.print("From a scale of 1 to 10, how would you rate " + song.getName() + "?");
+            System.out.print("From a scale of 1 to 10, how would you rate '" + song.getName() +
+                    "'? Whole number values only: ");
             input = scanner.nextInt();
             scanner.nextLine();
 
@@ -1128,15 +1129,15 @@ public class MainCLI {
                 review = scanner.nextLine();
             }
 
-            String sql = "{call make_rating (" + user.getUserID() + ", " + song.getSongID() + ", " + input + ", " +
-                    review + ")}";
+            String sql = "{call make_rating (" + user.getUserID() + ", " + song.getSongID() + ", " + input + ", '" +
+                    review + "')}";
             CallableStatement callableStatement = connection.prepareCall(sql);
             callableStatement.execute();
 
             System.out.println("Review made. Thank you for your feedback!");
             scanner.nextLine();
         } catch (NumberFormatException | InputMismatchException e) {
-            System.out.println("Incorrect data entered. Returning to Recommendation Menu.");
+            System.out.println("Incorrect data entered. Returning.");
             scanner = new Scanner(System.in);
             e.printStackTrace(System.err);
             scanner.nextLine();
@@ -1153,7 +1154,7 @@ public class MainCLI {
 
                     if (line.charAt(0) == 'y') {
                         String sql = "{call make_rating (" + user.getUserID() + ", " + song.getSongID() + ", " +
-                                input + ", " + review + ")}";
+                                input + ", '" + review + "')}";
                         CallableStatement callableStatement = connection.prepareCall(sql);
                         callableStatement.execute();
 
@@ -1166,7 +1167,7 @@ public class MainCLI {
                 System.out.println("Incorrect data entered. Returning.");
                 scanner = new Scanner(System.in);
                 e2.printStackTrace(System.err);
-            } catch (SQLException e2) {
+            } catch (Exception e2) {
                 System.out.println("Error connecting to SQL database. Returning.");
                 e2.printStackTrace(System.err);
                 scanner.nextLine();
