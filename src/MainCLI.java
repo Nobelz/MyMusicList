@@ -80,8 +80,7 @@ public class MainCLI {
             loginMenu(connection);
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect data entered. Please try Again.");
-            if (scanner.hasNextLine())
-                scanner.nextLine();
+            scanner = new Scanner(System.in);
             e.printStackTrace(System.err);
             scanner.nextLine();
             loginMenu(connection);
@@ -264,8 +263,7 @@ public class MainCLI {
             return 1;
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect menu output. Please try again");
-            if (scanner.hasNextLine())
-                scanner.nextLine();
+            scanner = new Scanner(System.in);
             e.printStackTrace(System.err);
             scanner.nextLine();
             return 1;
@@ -363,8 +361,7 @@ public class MainCLI {
 
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect input given. Returning to Main Menu.");
-            if (scanner.hasNextLine())
-                scanner.nextLine();
+            scanner = new Scanner(System.in);
             e.printStackTrace(System.err);
             scanner.nextLine();
             return new int[] {-1};
@@ -434,11 +431,9 @@ public class MainCLI {
             } else
                 return playlists[input - 1].getPlaylistID();
         } catch (NumberFormatException | InputMismatchException e) {
-            if (scanner.hasNextLine())
-                scanner.nextLine();
+            scanner = new Scanner(System.in);
             System.out.println("Incorrect input given. Please try again.");
-            if (scanner.hasNextLine())
-                scanner.nextLine();
+            scanner = new Scanner(System.in);
             e.printStackTrace(System.err);
             scanner.nextLine();
             return -1;
@@ -502,8 +497,7 @@ public class MainCLI {
             System.out.println("Created new playlist. Returning to Playlist Menu.");
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect input entered. Returning to Playlist Menu.");
-            if (scanner.hasNextLine())
-                scanner.nextLine();
+            scanner = new Scanner(System.in);
             e.printStackTrace(System.err);
             scanner.nextLine();
         } catch (SQLException e) {
@@ -541,10 +535,16 @@ public class MainCLI {
             }
         }
         if (playlist.isCanEdit()) {
-            System.out.println((playlist.getNumSongs() + 1) + ": Remove Songs");
-            System.out.println((playlist.getNumSongs() + 2) + ": Toggle Playlist Privacy");
-            System.out.println((playlist.getNumSongs() + 3) + ": Delete Playlist");
-            System.out.println((playlist.getNumSongs() + 4) + ": Return to Playlist Menu");
+            if (playlist.getNumSongs() > 0) {
+                System.out.println((playlist.getNumSongs() + 1) + ": Remove Songs");
+                System.out.println((playlist.getNumSongs() + 2) + ": Toggle Playlist Privacy");
+                System.out.println((playlist.getNumSongs() + 3) + ": Delete Playlist");
+                System.out.println((playlist.getNumSongs() + 4) + ": Return to Playlist Menu");
+            } else {
+                System.out.println((playlist.getNumSongs() + 1) + ": Toggle Playlist Privacy");
+                System.out.println((playlist.getNumSongs() + 2) + ": Delete Playlist");
+                System.out.println((playlist.getNumSongs() + 3) + ": Return to Playlist Menu");
+            }
         } else
             System.out.println((playlist.getNumSongs() + 1) + ": Return to Playlist Menu");
 
@@ -553,12 +553,15 @@ public class MainCLI {
             int input = scanner.nextInt();
             scanner.nextLine(); // Read end line character
             if (input < 1 || input > playlist.getNumSongs() + 4 ||
-                    (!playlist.isCanEdit() && input > playlist.getNumSongs() + 1))
+                    (!playlist.isCanEdit() && input > playlist.getNumSongs() + 1) ||
+                    (playlist.getNumSongs() == 0 && input > playlist.getNumSongs() + 3))
                 throw new InputMismatchException("Incorrect input given");
 
-            if (input == playlist.getNumSongs() + 4 || (input == playlist.getNumSongs() + 1 && !playlist.isCanEdit()))
+            if (input == playlist.getNumSongs() + 4 || (input == playlist.getNumSongs() + 1 && !playlist.isCanEdit()) ||
+                    (input == playlist.getNumSongs() + 3 && playlist.getNumSongs() == 0))
                 return -2;
-            else if (input == playlist.getNumSongs() + 3) {
+            else if (input == playlist.getNumSongs() + 3 ||
+                    (input == playlist.getNumSongs() + 2 && playlist.getNumSongs() == 0)) {
                 clearConsole();
                 System.out.print("Are you sure you want to delete this playlist? 'y' or 'n': ");
                 String line = scanner.nextLine();
@@ -577,7 +580,8 @@ public class MainCLI {
                 System.out.println("Playlist deleted. Returning to Playlist Menu.");
                 scanner.nextLine();
                 return -1;
-            } else if (input == playlist.getNumSongs() + 2) {
+            } else if (input == playlist.getNumSongs() + 2 ||
+                    (input == playlist.getNumSongs() + 1 && playlist.getNumSongs() == 0)) {
                 if (playlist.isPublic())
                     System.out.print("Are you sure you want to make this playlist private? 'y' or 'n': ");
                 else
