@@ -109,9 +109,7 @@ public class MainCLI {
                 throw new Exception("Username incorrect or not found.");
 
             if (resultSet.next()) {
-                String result = resultSet.getString(1);
-
-                int userID = Integer.parseInt(result);
+                int userID = resultSet.getInt(1);
                 return userID;
             }
 
@@ -224,11 +222,15 @@ public class MainCLI {
                     return 1;
                 case 2:
                     int playlistID = 0;
-                    while (playlistID == 0) {
+                    while (playlistID == 0 || playlistID == -1) {
                         playlistID = playlistMenu(connection, user);
                         if (playlistID > 0) {
-                            viewPlaylist(connection, user, MMLTools.getPlaylist(connection, user.getUserID(),
+                            int songID = 0;
+                            while (songID == 0 || songID == -1) {
+                                songID = viewPlaylist(connection, user, MMLTools.getPlaylist(connection, user.getUserID(),
                                     playlistID, true));
+                                    // TODO add viewSong
+                            }
                             playlistID = 0;
                         }
                     }
@@ -368,6 +370,13 @@ public class MainCLI {
         }
     }
 
+    /*
+     * -3: Error, no repeat
+     * -2: No error, no repeat
+     * -1: Error, repeat
+     * 0: No error, repeat
+     * >0: playlist ID
+     */
     private static int playlistMenu(Connection connection, User user) {
         clearConsole();
         System.out.println("Playlists");
@@ -412,22 +421,24 @@ public class MainCLI {
                 throw new InputMismatchException("Incorrect input given");
 
             if (input == i + 2)
-                return -1;
+                return -2;
             else if (input == i + 1) {
                 createPlaylistScreen(connection, user);
                 return 0;
             } else
                 return playlists[input - 1].getPlaylistID();
         } catch (InputMismatchException e) {
-            System.out.println("Incorrect input given. Returning to Main Menu.");
+            System.out.println("Incorrect input given. Please try again.");
+            if (scanner.hasNextLine())
+                scanner.nextLine();
             e.printStackTrace(System.err);
             scanner.nextLine();
-            return -2;
+            return -1;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Main Menu.");
             e.printStackTrace(System.err);
             scanner.nextLine();
-            return -2;
+            return -3;
         }
     }
 
@@ -495,8 +506,9 @@ public class MainCLI {
     /*
     >0: songID
     0: Return with repeat
-    -1: Return with no repeat
-    -2: Error: return with no repeat
+    -1: Error: repeat
+    -2: Return with no repeat
+    -3: Error: return with no repeat
      */
     private static int viewPlaylist(Connection connection, User user, Playlist playlist) {
         clearConsole();
@@ -546,7 +558,7 @@ public class MainCLI {
                 String sql = "{call delete_playlist (" + playlist.getUser().getUserID() + ", " +
                         playlist.getPlaylistID() + ")}";
                 CallableStatement callableStatement = connection.prepareCall(sql);
-                callableStatement.executeQuery();
+                callableStatement.execute();
 
                 System.out.println("Playlist deleted. Returning to Playlist Menu.");
                 scanner.nextLine();
@@ -567,7 +579,7 @@ public class MainCLI {
                 String sql = "{call toggle_playlist_privacy (" + playlist.getUser().getUserID() + ", " +
                         playlist.getPlaylistID() + ")}";
                 CallableStatement callableStatement = connection.prepareCall(sql);
-                callableStatement.executeQuery();
+                callableStatement.execute();
 
                 if (playlist.isPublic())
                     System.out.println("Playlist was made private.");
@@ -596,7 +608,7 @@ public class MainCLI {
                     String sql = "{call remove_from_playlist (" + songEntries[i] + ", " +
                             playlist.getUser().getUserID() + ", " + playlist.getPlaylistID() + ")}";
                     CallableStatement callableStatement = connection.prepareCall(sql);
-                    callableStatement.executeQuery();
+                    callableStatement.execute();
                 }
 
                 System.out.println("Songs removed.");
@@ -606,16 +618,16 @@ public class MainCLI {
             }
 
             return playlist.getSongs()[input - 1].getSongID();
-        } catch (InputMismatchException e) {
-            System.out.println("Incorrect menu output. Please try again");
+        } catch (NumberFormatException | InputMismatchException e) {
+            System.out.println("Incorrect menu output. Please try again.");
             e.printStackTrace(System.err);
             scanner.nextLine();
-            return 0;
+            return -1;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Playlist Menu.");
             e.printStackTrace(System.err);
             scanner.nextLine();
-            return -2;
+            return -3;
         }
     }
 }
