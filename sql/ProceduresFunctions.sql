@@ -352,57 +352,6 @@ RETURN
 );
 GO
 
-CREATE OR ALTER PROCEDURE find_recommendations
-	@ID int,
-	@num_recommendations int
-AS
-BEGIN
-	DECLARE @Result TABLE
-	(
-		type varchar(10),
-		song_id int,
-		name varchar(100)
-	);
-	
-	CREATE TABLE #temp_artist
-	(
-		artist_id int,
-		name varchar(50),
-		total_listens int
-	);
-
-	WITH temp_artist AS
-	(
-		SELECT DISTINCT 'artist' AS type, song.song_id, song.name
-		FROM dbo.fav_artists(@ID, 10) AS temp
-			JOIN song_artist ON song_artist.artist_id = temp.artist_id
-			JOIN song ON song_artist.song_id = song.song_id
-			LEFT JOIN listens ON listens.song_id = song.song_id
-		WHERE listens.user_id IS NULL AND song.song_id NOT IN 
-			(SELECT song_id FROM @Result)
-	)
-	INSERT INTO @Result
-	SELECT TOP(@num_recommendations) * FROM temp_artist
-	ORDER BY NEWID();
-
-	WITH temp_genre AS
-	(
-		SELECT DISTINCT 'genre' AS type, song.song_id, song.name
-		FROM dbo.fav_genres(@ID, 3) AS temp
-			JOIN song_genre ON song_genre.genre_name = temp.genre_name
-			JOIN song ON song_genre.song_id = song.song_id
-			LEFT JOIN listens ON listens.song_id = song.song_id
-		WHERE listens.user_id IS NULL AND song.song_id NOT IN 
-			(SELECT song_id FROM @Result)
-	)
-	INSERT INTO @Result
-	SELECT TOP(@num_recommendations) * FROM temp_genre
-	ORDER BY NEWID();
-
-	SELECT * FROM @Result;
-END;
-GO
-
 CREATE OR ALTER PROCEDURE find_rated_songs
 	@ID int
 AS
@@ -612,3 +561,55 @@ BEGIN
     WHERE to_id = @ID;
 END;
 GO
+
+CREATE OR ALTER PROCEDURE view_auto_recommendations
+    @ID int,
+    @num_recommendations int
+AS
+BEGIN
+    DECLARE @Result TABLE
+    (
+        type varchar(10),
+        song_id int,
+        name varchar(100)
+    );
+
+    CREATE TABLE #temp_artist
+    (
+        artist_id int,
+        name varchar(50),
+        total_listens int
+    );
+
+    WITH temp_artist AS
+        (
+            SELECT DISTINCT 'artist' AS type, song.song_id, song.name
+            FROM dbo.fav_artists(@ID, 10) AS temp
+                JOIN song_artist ON song_artist.artist_id = temp.artist_id
+                JOIN song ON song_artist.song_id = song.song_id
+                LEFT JOIN listens ON listens.song_id = song.song_id
+            WHERE listens.user_id IS NULL AND song.song_id NOT IN
+                (SELECT song_id FROM @Result)
+        )
+    INSERT INTO @Result
+    SELECT TOP(@num_recommendations) * FROM temp_artist
+    ORDER BY NEWID();
+
+    WITH temp_genre AS
+        (
+            SELECT DISTINCT 'genre' AS type, song.song_id, song.name
+            FROM dbo.fav_genres(@ID, 3) AS temp
+                JOIN song_genre ON song_genre.genre_name = temp.genre_name
+                JOIN song ON song_genre.song_id = song.song_id
+                LEFT JOIN listens ON listens.song_id = song.song_id
+            WHERE listens.user_id IS NULL AND song.song_id NOT IN
+                (SELECT song_id FROM @Result)
+        )
+    INSERT INTO @Result
+    SELECT TOP(@num_recommendations) * FROM temp_genre
+    ORDER BY NEWID();
+
+    SELECT * FROM @Result;
+END;
+GO
+
