@@ -972,6 +972,10 @@ public class MainCLI {
                     System.out.printf((j + 1) + ": %-30s\n", recommendation.getSong().getName());
                 j++;
             }
+            if (i == j)
+                System.out.println("No genre recommendations yet. Come back later!");
+
+            System.out.println();
 
             System.out.println((recommendations.length + 1) + ": Return to Recommendation Menu");
             System.out.print("Select an Entry: ");
