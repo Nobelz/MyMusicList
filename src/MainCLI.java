@@ -1129,9 +1129,9 @@ public class MainCLI {
                 review = scanner.nextLine();
             }
 
-            String sql = "{call make_rating (" + user.getUserID() + ", " + song.getSongID() + ", " + input + ", '" +
-                    review + "')}";
+            String sql = "{call make_review (" + user.getUserID() + ", " + song.getSongID() + ", " + input + ", ?)}";
             CallableStatement callableStatement = connection.prepareCall(sql);
+            callableStatement.setString(1, review);
             callableStatement.execute();
 
             System.out.println("Review made. Thank you for your feedback!");
@@ -1145,7 +1145,7 @@ public class MainCLI {
             try {
                 int sqlState = Integer.parseInt(e1.getSQLState());
                 if (sqlState == 23000) { // Integrity constraint violation
-                    System.out.println("You already rated this song would you like to overwrite that review? " +
+                    System.out.print("You already rated this song. Would you like to overwrite that review? " +
                             "'y' or 'n': ");
                     String line = scanner.nextLine();
 
@@ -1153,9 +1153,10 @@ public class MainCLI {
                         throw new InputMismatchException("Incorrect line input");
 
                     if (line.charAt(0) == 'y') {
-                        String sql = "{call make_rating (" + user.getUserID() + ", " + song.getSongID() + ", " +
-                                input + ", '" + review + "')}";
+                        String sql = "{call update_review (" + user.getUserID() + ", " + song.getSongID() + ", " +
+                                input + ", ?)}";
                         CallableStatement callableStatement = connection.prepareCall(sql);
+                        callableStatement.setString(1, review);
                         callableStatement.execute();
 
                         System.out.println("Review updated. Thank you for your feedback!");
