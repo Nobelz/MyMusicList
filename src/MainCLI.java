@@ -435,6 +435,7 @@ public class MainCLI {
             scanner.nextLine();
             return -1;
         } catch (SQLException e) {
+
             System.out.println("Error connecting to SQL database. Returning to Main Menu.");
             e.printStackTrace(System.err);
             scanner.nextLine();
@@ -762,6 +763,13 @@ public class MainCLI {
         try {
             Playlist[] playlists = MMLTools.findPlaylists(connection, user);
 
+            if (playlists.length == 0) {
+                System.out.println("You do not have any playlists. Please create a playlist " +
+                        "before adding songs to playlists.");
+                scanner.nextLine();
+                return;
+            }
+
             System.out.printf("    %-30s %-12s %-12s\n", "Name", "Song Count", "Duration");
             for (int i = 0; i < playlists.length; i++) {
                 Playlist playlist = playlists[i];
@@ -792,9 +800,18 @@ public class MainCLI {
             e.printStackTrace(System.err);
             scanner.nextLine();
         } catch (SQLException e) {
-            System.out.println("Error connecting to SQL database. Returning.");
-            e.printStackTrace(System.err);
-            scanner.nextLine();
+            try {
+                int sqlState = Integer.parseInt(e.getSQLState());
+                if (sqlState == 23000) { // Integrity constraint violation
+                    System.out.println("That playlist already has the song added. Returning.");
+                    scanner.nextLine();
+                } else
+                    throw new Exception("Other SQL Exception");
+            } catch (Exception ex) {
+                System.out.println("Error connecting to SQL database. Returning.");
+                e.printStackTrace(System.err);
+                scanner.nextLine();
+            }
         }
     }
 }
