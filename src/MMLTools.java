@@ -93,4 +93,25 @@ public class MMLTools {
         else
             throw new SQLException("User not found");
     }
+
+    public static Playlist[] findPlaylists(Connection connection, User user) throws SQLException {
+        String sql = "{call view_playlists (" + user.getUserID() + ", 'n')}";
+        CallableStatement callableStatement = connection.prepareCall(sql);
+        ResultSet resultSet = callableStatement.executeQuery();
+
+        LinkedList<Playlist> playlistList = new LinkedList<>();
+
+        int i = 0;
+        while (resultSet.next()) {
+            int playlistID = resultSet.getInt(1);
+            Playlist playlist = getPlaylist(connection, user.getUserID(), playlistID, true);
+            playlistList.add(playlist);
+            i++;
+        }
+
+        Playlist[] playlists = new Playlist[i];
+        playlistList.toArray(playlists);
+
+        return playlists;
+    }
 }

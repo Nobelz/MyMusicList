@@ -567,3 +567,43 @@ BEGIN
     WHERE @playlist_id = playlist_id AND @user_id = user_id;
 END;
 GO
+
+CREATE OR ALTER FUNCTION num_playlists_song(@ID int)
+RETURNS int
+AS
+BEGIN
+    DECLARE @num_playlists int
+
+    SELECT @num_playlists = count(*)
+    FROM song_playlist
+    WHERE @ID = song_id
+
+    SELECT @num_playlists =
+        CASE
+            WHEN @num_playlists IS NULL THEN 0
+            ELSE @num_playlists
+        END
+
+    RETURN @num_playlists;
+END;
+GO
+
+CREATE OR ALTER FUNCTION num_albums_song(@ID int)
+    RETURNS int
+AS
+BEGIN
+    DECLARE @num_albums int
+
+    SELECT @num_albums = count(*)
+    FROM song_album
+    WHERE @ID = song_id
+
+    SELECT @num_albums =
+           CASE
+               WHEN @num_albums IS NULL THEN 0
+               ELSE @num_albums
+               END
+
+    RETURN @num_albums;
+END;
+GO

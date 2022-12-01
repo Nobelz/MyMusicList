@@ -386,18 +386,10 @@ public class MainCLI {
         System.out.printf("    %-30s %-12s %-12s\n", "Name", "Song Count", "Duration");
 
         try {
-            String sql = "{call view_playlists (" + user.getUserID() + ", 'n')}";
-            CallableStatement callableStatement = connection.prepareCall(sql);
-            ResultSet resultSet = callableStatement.executeQuery();
-
-            LinkedList<Playlist> playlistList = new LinkedList<>();
+            Playlist[] playlists = MMLTools.findPlaylists(connection, user);
 
             int i = 0;
-            while (resultSet.next()) {
-                int playlistID = resultSet.getInt(1);
-                Playlist playlist = MMLTools.getPlaylist(connection, user.getUserID(), playlistID, true);
-                playlistList.add(playlist);
-
+            for (Playlist playlist : playlists) {
                 if (i < 9)
                     System.out.printf((i + 1) + ":  %-30s %-12s %-12s\n", playlist.getName(),
                             playlist.getNumSongs(), playlist.getDuration());
@@ -406,9 +398,6 @@ public class MainCLI {
                             playlist.getNumSongs(), playlist.getDuration());
                 i++;
             }
-
-            Playlist[] playlists = new Playlist[i];
-            playlistList.toArray(playlists);
 
             if (playlists.length == 0) {
                 System.out.println("No Playlists to Display");
@@ -647,6 +636,158 @@ public class MainCLI {
             e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
+        }
+    }
+
+    /*
+     0: Return with repeat
+    -1: Error: repeat
+    -2: Return with no repeat
+    -3: Error: return with no repeat
+     */
+    private static int viewSong(Connection connection, User user, Song song) {
+        clearConsole();
+        System.out.println(song.getName());
+        System.out.print("Song by ");
+        for (int i = 0; i < song.getArtists().length; i++) {
+            Artist artist = song.getArtists()[i];
+            if (i == song.getArtists().length - 1)
+                System.out.print(artist.getName() + "\n");
+            else
+                System.out.print(artist.getName() + ", ");
+        }
+
+        try {
+            String sql = "SELECT dbo.num_plays_song(" + song.getSongID() + ")";
+            Statement statement = connection.createStatement();
+            statement.execute(sql);
+            ResultSet resultSet = statement.getResultSet();
+
+            int numPlays;
+            if (resultSet.next()) {
+                numPlays = resultSet.getInt(1);
+            } else
+                throw new SQLException("No num plays found");
+
+            sql = "SELECT dbo.num_playlists_song(" + song.getSongID() + ")";
+            statement = connection.createStatement();
+            statement.execute(sql);
+            resultSet = statement.getResultSet();
+
+            int numPlaylists;
+            if (resultSet.next()) {
+                numPlaylists = resultSet.getInt(1);
+            } else
+                throw new SQLException("No num plays found");
+
+            sql = "SELECT dbo.num_albums_song(" + song.getSongID() + ")";
+            statement = connection.createStatement();
+            statement.execute(sql);
+            resultSet = statement.getResultSet();
+
+            int numAlbums;
+            if (resultSet.next()) {
+                numAlbums = resultSet.getInt(1);
+            } else
+                throw new SQLException("No num plays found");
+
+            sql = "SELECT dbo.avg_rating_song(" + song.getSongID() + ")";
+            statement = connection.createStatement();
+            statement.execute(sql);
+            resultSet = statement.getResultSet();
+
+            double avgRating;
+            if (resultSet.next()) {
+                if (resultSet.wasNull())
+                    avgRating = -1;
+                else
+                    avgRating = resultSet.getFloat(1);
+            } else
+                throw new SQLException("No num plays found");
+
+            System.out.println("Duration: " + song.getDuration());
+            if (avgRating < 0)
+                System.out.println("Not rated yet");
+            else
+                System.out.println("Average rating: " + Math.round(avgRating * 10) / 10.0 + "out of 10");
+            System.out.println("Number of plays: " + numPlays);
+            if (numPlaylists == 1)
+                System.out.println("Found in " + numPlaylists + "playlist");
+            else
+                System.out.println("Found in " + numPlaylists + "playlists");
+            if (numAlbums == 1)
+                System.out.println("Found in " + numPlaylists + "album");
+            else
+                System.out.println("Found in " + numPlaylists + "albums");
+
+            System.out.println("1: Add to Playlist");
+            System.out.println("2: Return");
+
+            System.out.print("Select an Entry: ");
+            int input = scanner.nextInt();
+            scanner.nextLine(); // Read end line character
+
+            if (input != 1 && input != 2)
+                throw new InputMismatchException("Incorrect input given");
+
+            if (input == 1) {
+                addToPlaylist(connection, user, song);
+                return 0;
+            } else
+                return -2;
+        } catch (NumberFormatException | InputMismatchException e) {
+            System.out.println("Incorrect menu output. Please try again.");
+            scanner = new Scanner(System.in);
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+            return -1;
+        } catch (SQLException e) {
+            System.out.println("Error connecting to SQL database. Returning.");
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+            return -3;
+        }
+    }
+
+    private static void addToPlaylist(Connection connection, User user, Song song) {
+        clearConsole();
+
+        try {
+            Playlist[] playlists = MMLTools.findPlaylists(connection, user);
+
+            System.out.printf("    %-30s %-12s %-12s\n", "Name", "Song Count", "Duration");
+            for (int i = 0; i < playlists.length; i++) {
+                Playlist playlist = playlists[i];
+                if (i < 9)
+                    System.out.printf((i + 1) + ":  %-30s %-12s %-12s\n", playlist.getName(),
+                            playlist.getNumSongs(), playlist.getDuration());
+                else
+                    System.out.printf((i + 1) + ": %-30s %-12s %-12s\n", playlist.getName(),
+                            playlist.getNumSongs(), playlist.getDuration());
+            }
+
+            System.out.print("Add to which playlist? ");
+            int input = scanner.nextInt();
+            scanner.nextLine(); // Read end line character
+
+            if (input < 1 || input > playlists.length)
+                throw new InputMismatchException("Incorrect input given");
+
+            String sql = "{call add_to_playlist (" + song.getSongID() + ", " +
+                    playlists[input - 1].getUser().getUserID() + ", " + playlists[input - 1].getPlaylistID() + ")}";
+            CallableStatement callableStatement = connection.prepareCall(sql);
+            callableStatement.execute();
+
+            System.out.println("Successfully added to playlist.");
+        } catch (NumberFormatException | InputMismatchException e) {
+            System.out.println("Incorrect input given. Returning.");
+            scanner = new Scanner(System.in);
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+        } catch (SQLException e) {
+            System.out.println("Error connecting to SQL database. Returning.");
+            e.printStackTrace(System.err);
+            scanner.nextLine();
         }
     }
 }
