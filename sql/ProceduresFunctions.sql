@@ -672,3 +672,28 @@ BEGIN
     RETURN @num_listens;
 END;
 GO
+
+CREATE OR ALTER PROCEDURE make_review
+    @user_id int,
+    @song_id int,
+    @rating int,
+    @review varchar(250)
+AS
+BEGIN
+    INSERT INTO rating(user_id, song_id, rating, review)
+    VALUES (@user_id, @song_id, @rating, @review);
+END;
+GO
+
+CREATE OR ALTER PROCEDURE update_review
+    @user_id int,
+    @song_id int,
+    @rating int,
+    @review varchar(250)
+AS
+BEGIN
+    UPDATE rating
+    SET rating = @rating, review = @review
+    WHERE user_id = @user_id AND song_id = @song_id;
+END;
+GO

@@ -809,6 +809,8 @@ public class MainCLI {
                     logListenScreen(connection, user, song);
                     return 0;
                 case 3:
+                    reviewScreen(connection, user, song);
+                    return 0;
                 case 4:
                     makeRecommendationScreen(connection, user, song);
                     return 0;
@@ -1098,6 +1100,77 @@ public class MainCLI {
             System.out.println("Error connecting to SQL database. Returning to Recommendation Menu.");
             e.printStackTrace(System.err);
             scanner.nextLine();
+        }
+    }
+
+    private static void reviewScreen(Connection connection, User user, Song song) {
+        clearConsole();
+
+        int input = -1;
+        String review = "";
+
+        try {
+            System.out.print("From a scale of 1 to 10, how would you rate " + song.getName() + "?");
+            input = scanner.nextInt();
+            scanner.nextLine();
+
+            if (input < 1 || input > 10)
+                throw new InputMismatchException("Rating out of bounds");
+
+            System.out.print("Would you like to leave a review? 'y' or 'n': ");
+            String line = scanner.nextLine();
+
+            if (line.length() != 1 || (line.charAt(0) != 'y' && line.charAt(0) != 'n'))
+                throw new InputMismatchException("Incorrect line input");
+
+            if (line.charAt(0) == 'y') {
+                System.out.println("Leave your review below, then press ENTER: ");
+                review = scanner.nextLine();
+            }
+
+            String sql = "{call make_rating (" + user.getUserID() + ", " + song.getSongID() + ", " + input + ", " +
+                    review + ")}";
+            CallableStatement callableStatement = connection.prepareCall(sql);
+            callableStatement.execute();
+
+            System.out.println("Review made. Thank you for your feedback!");
+            scanner.nextLine();
+        } catch (NumberFormatException | InputMismatchException e) {
+            System.out.println("Incorrect data entered. Returning to Recommendation Menu.");
+            scanner = new Scanner(System.in);
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+        } catch (SQLException e1) {
+            try {
+                int sqlState = Integer.parseInt(e1.getSQLState());
+                if (sqlState == 23000) { // Integrity constraint violation
+                    System.out.println("You already rated this song would you like to overwrite that review? " +
+                            "'y' or 'n': ");
+                    String line = scanner.nextLine();
+
+                    if (line.length() != 1 || (line.charAt(0) != 'y' && line.charAt(0) != 'n'))
+                        throw new InputMismatchException("Incorrect line input");
+
+                    if (line.charAt(0) == 'y') {
+                        String sql = "{call make_rating (" + user.getUserID() + ", " + song.getSongID() + ", " +
+                                input + ", " + review + ")}";
+                        CallableStatement callableStatement = connection.prepareCall(sql);
+                        callableStatement.execute();
+
+                        System.out.println("Review updated. Thank you for your feedback!");
+                        scanner.nextLine();
+                    }
+                } else
+                    throw new SQLException(e1);
+            } catch (InputMismatchException e2) {
+                System.out.println("Incorrect data entered. Returning.");
+                scanner = new Scanner(System.in);
+                e2.printStackTrace(System.err);
+            } catch (SQLException e2) {
+                System.out.println("Error connecting to SQL database. Returning.");
+                e2.printStackTrace(System.err);
+                scanner.nextLine();
+            }
         }
     }
 }
