@@ -363,12 +363,6 @@ BEGIN
 		song_id int,
 		name varchar(100)
 	);
-
-	INSERT INTO @Result
-	SELECT 'user' AS type, song.song_id, song.name
-	FROM recommendation
-		JOIN song ON song.song_id = recommendation.song_id
-	WHERE to_id = @ID;
 	
 	CREATE TABLE #temp_artist
 	(
@@ -605,5 +599,16 @@ BEGIN
                END
 
     RETURN @num_albums;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE view_user_recommendations
+    @ID int
+AS
+BEGIN
+    SELECT song.song_id, song.name, recommendation.from_id
+    FROM recommendation
+             JOIN song ON song.song_id = recommendation.song_id
+    WHERE to_id = @ID;
 END;
 GO

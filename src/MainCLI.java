@@ -391,7 +391,7 @@ public class MainCLI {
      */
     private static int playlistMenu(Connection connection, User user) {
         clearConsole();
-        System.out.println("Playlists");
+        System.out.println("Playlist Menu");
         System.out.printf("    %-30s %-12s %-12s\n", "Name", "Song Count", "Duration");
 
         try {
@@ -443,9 +443,54 @@ public class MainCLI {
         }
     }
 
+    /*
+     0: Return with repeat
+    -1: Error: repeat
+    -2: Return with no repeat
+    -3: Error: return with no repeat
+     */
     private static int recommendationMenu(Connection connection, User user) {
-        // TODO implement
-        throw new UnsupportedOperationException("Not implemented yet");
+        clearConsole();
+        System.out.println("Recommendation Menu");
+        System.out.println("1: View User Recommendations");
+        System.out.println("2: View Auto-generated Recommendations");
+        System.out.println("3: Make Recommendations to Other Users");
+        System.out.println("4: Return to Main Menu");
+
+        int input = scanner.nextInt();
+        scanner.nextLine();
+        if (input < 1 || input > 4)
+            throw new InputMismatchException("Incorrect input given");
+
+        try {
+            switch (input) {
+                case 1:
+                    int songID = 0;
+                    while (songID == 0 || songID == -1) {
+                        songID = viewPersonalRecommendations(connection, user);
+                        if (songID > 0) {
+                            int code = 0;
+                            while (code == 0 || code == -1) {
+                                code = viewSong(connection, user, MMLTools.getSong(connection, songID));
+                            }
+                            songID = 0;
+                        }
+                    }
+                    return 0;
+            }
+            return -2;
+        } catch (NumberFormatException | InputMismatchException e) {
+            System.out.println("Incorrect input given. Please try again.");
+            scanner = new Scanner(System.in);
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+            return -1;
+        } catch (SQLException e) {
+            System.out.println("Error connecting to SQL database. Returning to Main Menu.");
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+            return -3;
+        }
     }
 
     private static int queryMenu(Connection connection, User user) {
@@ -794,6 +839,7 @@ public class MainCLI {
             callableStatement.execute();
 
             System.out.println("Successfully added to playlist.");
+            scanner.nextLine();
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect input given. Returning.");
             scanner = new Scanner(System.in);
@@ -812,6 +858,61 @@ public class MainCLI {
                 e.printStackTrace(System.err);
                 scanner.nextLine();
             }
+        }
+    }
+
+    /*
+     >0: Song ID
+     0: Return with repeat
+    -1: Error: repeat
+    -2: Return with no repeat
+    -3: Error: return with no repeat
+     */
+    private static int viewPersonalRecommendations(Connection connection, User user) {
+        clearConsole();
+        try {
+            Recommendation[] recommendations = MMLTools.findPersonalRecommendations(connection, user);
+
+            if (recommendations.length == 0) {
+                System.out.println("No user recommendations yet. Come back later!");
+                return -2;
+            }
+
+            System.out.println("User Recommendations");
+            System.out.printf("    %-30s %-20s\n", "Name", "Recommended By");
+            for (int i = 0; i < recommendations.length; i++) {
+                Recommendation recommendation = recommendations[i];
+                if (i < 9)
+                    System.out.printf((i + 1) + ":  %-30s %-20s\n", recommendation.getSong().getName(),
+                            recommendation.getFromUser().getName());
+                else
+                    System.out.printf((i + 1) + ": %-30s %-20s\n", recommendation.getSong().getName(),
+                            recommendation.getFromUser().getName());
+            }
+            System.out.println((recommendations.length + 1) + ": Return to Recommendation Menu");
+            System.out.print("Select an Entry: ");
+            int input = scanner.nextInt();
+            scanner.nextLine();
+
+            if (input < 1 || input > recommendations.length + 1)
+                throw new InputMismatchException("Incorrect input given");
+
+            if (input == recommendations.length + 1)
+                return -2;
+
+            return recommendations[input - 1].getSong().getSongID();
+        } catch (NumberFormatException | InputMismatchException e) {
+            System.out.println("Incorrect input given. Please try again.");
+            scanner = new Scanner(System.in);
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+            return -1;
+        } catch (SQLException e) {
+
+            System.out.println("Error connecting to SQL database. Returning to Main Menu.");
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+            return -3;
         }
     }
 }
