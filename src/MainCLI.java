@@ -1,4 +1,5 @@
 import java.sql.*;
+import java.util.HashSet;
 import java.util.InputMismatchException;
 import java.util.LinkedList;
 import java.util.Scanner;
@@ -6,12 +7,12 @@ import java.util.Scanner;
 public class MainCLI {
     private static final String connectionURL =
             "jdbc:sqlserver://localhost;"
-            + "database=MyMusicList;"
-            + "user=dbuser;"
-            + "password=Nobelium;"
-            + "encrypt=true;"
-            + "trustServerCertificate=true;"
-            + "loginTimeout=10;";
+                    + "database=MyMusicList;"
+                    + "user=dbuser;"
+                    + "password=Nobelium;"
+                    + "encrypt=true;"
+                    + "trustServerCertificate=true;"
+                    + "loginTimeout=10;";
 
     private static Scanner scanner = new Scanner(System.in);
 
@@ -61,7 +62,7 @@ public class MainCLI {
 
             if (input == 1) {
                 int userID = loginScreen(connection);
-            
+
                 if (userID > 0) {
                     User user = authenticateUser(connection, userID);
                     while (mainMenu(connection, user) == 1);
@@ -69,7 +70,7 @@ public class MainCLI {
                     throw new InputMismatchException("Incorrect username");
             } else if (input == 2) {
                 int userID = registerScreen(connection);
-               
+
                 if (userID > 0) {
                     User user = authenticateUser(connection, userID);
                     while (mainMenu(connection, user) == 1);
@@ -231,14 +232,14 @@ public class MainCLI {
                             int songID = 0;
                             while (songID == 0 || songID == -1) {
                                 songID = viewPlaylist(connection, user, MMLTools.getPlaylist(connection, user.getUserID(),
-                                    playlistID, true));
+                                        playlistID, true));
 
                                 if (songID > 0) {
-                                     int code = 0;
-                                     while (code == 0 || code == -1) {
-                                         code = viewSong(connection, user, MMLTools.getSong(connection, songID));
-                                     }
-                                     songID = 0;
+                                    int code = 0;
+                                    while (code == 0 || code == -1) {
+                                        code = viewSong(connection, user, MMLTools.getSong(connection, songID));
+                                    }
+                                    songID = 0;
                                 }
                             }
                             playlistID = 0;
@@ -253,15 +254,22 @@ public class MainCLI {
 
                     return 1;
                 case 4:
-                    while (queryMenu(connection, user) == 1);
-                    break;
+                    return 1;
                 case 5:
                     while (profileSettings(connection, user) == 1);
                     break;
                 case 6:
-                    if (isArtist)
-                        while (artistMenu(connection, user) == 1);
-                    else
+                    code = 0;
+                    if (isArtist) {
+                        code = 0;
+                        while (code == 0 || code == -1) {
+                            if (user instanceof Artist)
+                                code = artistMenu(connection, (Artist) user);
+                            else throw new SQLException("User was designated as Artist but is not Artist");
+                        }
+
+                        return 1;
+                    } else
                         return 0;
                 case 7:
                     if (isArtist)
@@ -303,7 +311,7 @@ public class MainCLI {
 
         try {
             String sql = "{call search (" + user.getUserID() + ", ?, 10, 1, 'y', 'y', 'y', 'y', 'y')}";
-            CallableStatement callableStatement = connection.prepareCall(sql);  
+            CallableStatement callableStatement = connection.prepareCall(sql);
 
             callableStatement.setString(1, query);
             ResultSet resultSet = callableStatement.executeQuery();
@@ -518,9 +526,59 @@ public class MainCLI {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
-    private static int artistMenu(Connection connection, User user) {
-        // TODO implement
-        throw new UnsupportedOperationException("Not implemented yet");
+    private static int artistMenu(Connection connection, Artist artist) {
+        clearConsole();
+        System.out.println("Artist Menu");
+        System.out.println("1: View/Edit Albums");
+        System.out.println("2: View/Edit Songs");
+        System.out.println("3: Delete Artist Account");
+        System.out.println("4: Return to Main Menu");
+
+        try {
+            System.out.print("Select an Entry: ");
+            int input = scanner.nextInt();
+            scanner.nextLine(); // Read end line character
+
+            if (input < 1 || input > 4)
+                throw new InputMismatchException("Incorrect input given");
+
+            switch (input) {
+                case 1:
+                    int albumID = 0;
+                    while (albumID == 0 || albumID == -1) {
+                        albumID = albumMenu(connection, artist);
+                        if (albumID > 0) {
+                            int songID = 0;
+                            while (songID == 0 || songID == -1) {
+                                songID = viewAlbum(connection, artist, MMLTools.getAlbum(connection, albumID, true));
+
+                                if (songID > 0) {
+                                    int code = 0;
+                                    while (code == 0 || code == -1) {
+                                        code = viewSong(connection, artist, MMLTools.getSong(connection, songID));
+                                    }
+                                    songID = 0;
+                                }
+                            }
+                            albumID = 0;
+                            //TODO WAS HERE
+                        }
+                    }
+                    return 1;
+            }
+            return 1;
+        } catch (NumberFormatException | InputMismatchException e) {
+            System.out.println("Incorrect input given. Please try again.");
+            scanner = new Scanner(System.in);
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+            return -1;
+        } catch (SQLException e) {
+            System.out.println("Error connecting to SQL database. Returning to Main Menu.");
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+            return -3;
+        }
     }
 
     private static void createPlaylistScreen(Connection connection, User user) {
@@ -535,22 +593,20 @@ public class MainCLI {
             if (privacy.length() != 1 || (privacy.charAt(0) != 'y' && privacy.charAt(0) != 'n'))
                 throw new InputMismatchException("Incorrect privacy input");
 
-            // TODO Change to function
-            String sql = "SELECT max(playlist_id) + 1 FROM playlist WHERE user_id = " + user.getUserID();
+            String sql = "SELECT dbo.generate_playlist_id(" + user.getUserID() + ")";
             Statement statement = connection.createStatement();
             statement.execute(sql);
-
             ResultSet resultSet = statement.getResultSet();
 
-            // TODO Change to procedure
-            int playlistID = (resultSet.next()) ? resultSet.getInt(1) : 1;
-            sql = "INSERT INTO playlist(user_id, playlist_id, name, is_public) VALUES(" + user.getUserID() + ", " + playlistID +
-                    ", " + "?, ?)";
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            if (!resultSet.next())
+                throw new SQLException("Playlist ID could not be generated");
 
-            preparedStatement.setString(1, name);
-            preparedStatement.setString(2, privacy);
-            preparedStatement.execute();
+            int playlistID = resultSet.getInt(1);
+            sql = "{call make_playlist (" + user.getUserID() + ", " + playlistID + ", ?, ?)}";
+            CallableStatement callableStatement = connection.prepareCall(sql);
+            callableStatement.setString(1, name);
+            callableStatement.setString(2, privacy);
+            callableStatement.execute();
 
             System.out.println("Created new playlist. Returning to Playlist Menu.");
         } catch (NumberFormatException | InputMismatchException e) {
@@ -701,6 +757,158 @@ public class MainCLI {
             return -1;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Playlist Menu.");
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+            return -3;
+        }
+    }
+
+    /*
+   >0: songID
+    0: Return with repeat
+   -1: Error: repeat
+   -2: Return with no repeat
+   -3: Error: return with no repeat
+    */
+    private static int viewAlbum(Connection connection, User user, Album album) {
+        clearConsole();
+        System.out.println(album.getName());
+        System.out.print("Album by ");
+        for (int i = 0; i < album.getArtists().length; i++) {
+            Artist artist = album.getArtists()[i];
+            if (i == album.getArtists().length - 1)
+                System.out.print(artist.getName() + "\n");
+            else
+                System.out.print(artist.getName() + ", ");
+        }
+
+        try {
+            String sql = "SELECT dbo.num_plays_album(" + album.getAlbumID() + ")";
+            Statement statement = connection.createStatement();
+            statement.execute(sql);
+            ResultSet resultSet = statement.getResultSet();
+
+            int numPlays;
+            if (resultSet.next()) {
+                numPlays = resultSet.getInt(1);
+            } else
+                throw new SQLException("No num plays found");
+
+            sql = "SELECT dbo.avg_rating_album(" + album.getAlbumID() + ")";
+            statement = connection.createStatement();
+            statement.execute(sql);
+            resultSet = statement.getResultSet();
+
+            double avgRating;
+            if (resultSet.next()) {
+                if (resultSet.wasNull())
+                    avgRating = -1;
+                else
+                    avgRating = resultSet.getFloat(1);
+            } else
+                throw new SQLException("No average rating found");
+
+            System.out.println("Duration: " + album.getDuration());
+            if (avgRating < 1)
+                System.out.println("Not rated yet");
+            else
+                System.out.println("Average rating: " + Math.round(avgRating * 10) / 10.0 + " out of 10");
+            System.out.println("Number of plays: " + numPlays);
+
+            System.out.println();
+            System.out.println("Songs:");
+            if (album.getSongs().length == 0)
+                System.out.println("No songs yet.");
+            else {
+                System.out.printf("    %-30s %-12s\n", "Name", "Duration");
+                for (int i = 0; i < album.getSongs().length; i++) {
+                    Song song = album.getSongs()[i];
+                    if (i < 9)
+                        System.out.printf((i + 1) + ":  %-30s %-12s\n", song.getName(), song.getDuration());
+                    else
+                        System.out.printf((i + 1) + ": %-30s %-12s\n", song.getName(), song.getDuration());
+                }
+            }
+
+            if (album.isCanEdit()) {
+                if (album.getNumSongs() > 0) {
+                    System.out.println((album.getNumSongs() + 1) + ": Remove Songs");
+                    System.out.println((album.getNumSongs() + 2) + ": Delete Album");
+                    System.out.println((album.getNumSongs() + 3) + ": Return to Album Menu");
+                } else {
+                    System.out.println((album.getNumSongs() + 1) + ": Delete Album");
+                    System.out.println((album.getNumSongs() + 2) + ": Return to Album Menu");
+                }
+            } else
+                System.out.println((album.getNumSongs() + 1) + ": Return to Album Menu");
+
+            System.out.print("Select an Entry: ");
+            int input = scanner.nextInt();
+            scanner.nextLine(); // Read end line character
+            if (input < 1 || input > album.getNumSongs() + 3 || (!album.isCanEdit() &&
+                    input > album.getNumSongs() + 1) ||
+                    (album.getNumSongs() == 0 && input > album.getNumSongs() + 2))
+                throw new InputMismatchException("Incorrect input given");
+
+            if (input == album.getNumSongs() + 3 || (input == album.getNumSongs() + 1 && !album.isCanEdit()) ||
+                    (input == album.getNumSongs() + 2 && album.getNumSongs() == 0))
+                return -2;
+            else if (input == album.getNumSongs() + 2 ||
+                    (input == album.getNumSongs() + 1 && album.getNumSongs() == 0)) {
+                System.out.print("Are you sure you want to delete this album? 'y' or 'n': ");
+                String line = scanner.nextLine();
+
+                if (line.length() != 1 || (line.charAt(0) != 'y' && line.charAt(0) != 'n'))
+                    throw new InputMismatchException("Incorrect input");
+
+                if (line.charAt(0) == 'n')
+                    return 0;
+
+                sql = "{call delete_album (" + album.getAlbumID() + ")}";
+                CallableStatement callableStatement = connection.prepareCall(sql);
+                callableStatement.execute();
+
+                System.out.println("Album deleted. Returning to Album Menu.");
+                scanner.nextLine();
+                return -2;
+            } else if (input == album.getNumSongs() + 1) {
+                System.out.print("Enter the numbers of the songs you want deleted, separated by commas, no spaces: ");
+                String line = scanner.nextLine();
+
+                String[] entries = line.split(",");
+                int[] songEntries = new int[entries.length];
+
+                if (entries.length == 0)
+                    throw new InputMismatchException("No entries specified");
+
+                for (int i = 0; i < entries.length; i++) {
+                    int parsed = Integer.parseInt(entries[i]) - 1;
+                    if (parsed < 0 || parsed >= album.getNumSongs())
+                        throw new InputMismatchException("Entry number not valid");
+                    songEntries[i] = parsed;
+                }
+
+                for (int i = 0; i < songEntries.length; i++) {
+                    sql = "{call remove_from_album (" + album.getSongs()[songEntries[i]].getSongID() + ", " +
+                            album.getAlbumID() + ")}";
+                    CallableStatement callableStatement = connection.prepareCall(sql);
+                    callableStatement.execute();
+                }
+
+                System.out.println("Songs removed from album. Returning to Album Menu.");
+                scanner.nextLine();
+                return 0;
+            }
+
+            return album.getSongs()[input - 1].getSongID();
+        } catch (NumberFormatException | InputMismatchException e) {
+            System.out.println("Incorrect menu output. Please try again.");
+            scanner = new Scanner(System.in);
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+            return -1;
+        } catch (SQLException e) {
+            System.out.println("Error connecting to SQL database. Returning.");
             e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
@@ -1173,6 +1381,147 @@ public class MainCLI {
                 e2.printStackTrace(System.err);
                 scanner.nextLine();
             }
+        }
+    }
+
+    /*
+     * -3: Error, no repeat
+     * -2: No error, no repeat
+     * -1: Error, repeat
+     * 0: No error, repeat
+     * >0: album ID
+     */
+    private static int albumMenu(Connection connection, Artist artist) {
+        clearConsole();
+        System.out.println("Album Menu");
+        System.out.printf("    %-30s %-12s %-12s\n", "Name", "Song Count", "Duration");
+
+        try {
+            Album[] albums = MMLTools.findAlbums(connection, artist);
+
+            int i = 0;
+            for (Album album : albums) {
+                if (i < 9)
+                    System.out.printf((i + 1) + ":  %-30s %-12s %-12s\n", album.getName(),
+                            album.getNumSongs(), album.getDuration());
+                else
+                    System.out.printf((i + 1) + ": %-30s %-12s %-12s\n", album.getName(),
+                            album.getNumSongs(), album.getDuration());
+                i++;
+            }
+
+            if (albums.length == 0) {
+                System.out.println("No Albums to Display");
+            }
+
+            System.out.println((i + 1) + ": Create New Album");
+            System.out.println((i + 2) + ": Return to Main Menu");
+            System.out.print("Select an Entry: ");
+            int input = scanner.nextInt();
+            scanner.nextLine();
+
+            if (input < 1 || input > i + 2)
+                throw new InputMismatchException("Incorrect input given");
+
+            if (input == i + 2)
+                return -2;
+            else if (input == i + 1) {
+                createAlbumScreen(connection, artist);
+                return 0;
+            } else
+                return albums[input - 1].getAlbumID();
+        } catch (NumberFormatException | InputMismatchException e) {
+            System.out.println("Incorrect input given. Please try again.");
+            scanner = new Scanner(System.in);
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+            return -1;
+        } catch (SQLException e) {
+            System.out.println("Error connecting to SQL database. Returning to Main Menu.");
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+            return -3;
+        }
+    }
+
+    private static void createAlbumScreen(Connection connection, Artist artist) {
+        clearConsole();
+        try {
+            System.out.println("Create New Album ");
+            System.out.print("What is the name of your album? ");
+            String name = scanner.nextLine();
+
+            System.out.print("Enter the names of the genres for the album, separated by commas, no spaces: ");
+            String line = scanner.nextLine();
+            String[] entries = line.split(",");
+
+            if (entries.length == 0)
+                throw new InputMismatchException("No genres specified");
+
+            HashSet<Genre> genreSet = new HashSet<>();
+            try {
+                for (String entry : entries) {
+                    genreSet.add(MMLTools.getGenre(connection, entry));
+                }
+            } catch (SQLException e) {
+                throw new InputMismatchException("Invalid genre input");
+            }
+
+            Genre[] genres = new Genre[genreSet.size()];
+            genreSet.toArray(genres);
+
+            System.out.print("Enter the usernames of other collaborating artists, separated by commas, no spaces. " +
+                    "If you are the sole playlist, just press ENTER: ");
+            line = scanner.nextLine();
+            entries = line.split(",");
+
+            HashSet<Artist> artistSet = new HashSet<>();
+            artistSet.add(artist);
+            try {
+                for (String entry : entries) {
+                    artistSet.add(MMLTools.getArtist(connection, Integer.parseInt(entry)));
+                }
+            } catch (SQLException e) {
+                throw new InputMismatchException("Invalid artist input");
+            }
+
+            Artist[] artists = new Artist[artistSet.size()];
+            artistSet.toArray(artists);
+
+            String sql = "{call make_album (?)}";
+            CallableStatement callableStatement = connection.prepareCall(sql);
+            callableStatement.setString(1, name);
+            callableStatement.execute();
+            ResultSet resultSet = callableStatement.getGeneratedKeys();
+
+            int albumID;
+            if (resultSet.next()) {
+                albumID = resultSet.getInt(1);
+            } else
+                throw new SQLException("Insertion didn't work");
+
+            for (Artist a : artists) {
+                sql = "{call add_album_artist (" + albumID + ", " + a.getUserID() + ")}";
+                callableStatement = connection.prepareCall(sql);
+                callableStatement.execute();
+            }
+
+            for (Genre g : genres) {
+                sql = "{call add_album_genre(" + albumID + ", " + g.getName() + ")}";
+                callableStatement = connection.prepareCall(sql);
+                callableStatement.execute();
+            }
+
+            System.out.println("Album created. Returning to Album Menu.");
+        } catch (NumberFormatException | InputMismatchException e) {
+            System.out.println("Incorrect input entered. Returning to Album Menu.");
+            scanner = new Scanner(System.in);
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+        } catch (SQLException e) {
+            System.out.println("Error connecting to SQL database. Returning to Album Menu.");
+            e.printStackTrace(System.err);
+            scanner.nextLine();
         }
     }
 }

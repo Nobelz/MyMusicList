@@ -1,7 +1,8 @@
+import java.util.Objects;
+
 public class Playlist {
     private final User user;
     private final int playlistID;
-    private final int durationValue;
     private final String duration;
     private final String name;
     private final Song[] songs;
@@ -11,7 +12,6 @@ public class Playlist {
     public Playlist(User user, int playlistID, int durationValue, String duration, String name, Song[] songs, boolean canEdit, boolean isPublic) {
         this.user = user;
         this.playlistID = playlistID;
-        this.durationValue = durationValue;
         this.duration = duration;
         this.name = name;
         this.songs = songs;
@@ -25,10 +25,6 @@ public class Playlist {
 
     public int getPlaylistID() {
         return playlistID;
-    }
-
-    public int getDurationValue() {
-        return durationValue;
     }
 
     public String getDuration() {
@@ -53,5 +49,13 @@ public class Playlist {
 
     public boolean isPublic() {
         return isPublic;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Playlist playlist = (Playlist) o;
+        return playlistID == playlist.playlistID && Objects.equals(user, playlist.user);
     }
 }

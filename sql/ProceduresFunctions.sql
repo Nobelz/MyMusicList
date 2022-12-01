@@ -319,6 +319,16 @@ BEGIN
 END;
 GO
 
+CREATE OR ALTER PROCEDURE remove_from_album
+    @song_id int,
+    @album_id int
+AS
+BEGIN
+    DELETE FROM song_album
+    WHERE song_id = @song_id AND album_id = @album_id;
+END;
+GO
+
 CREATE OR ALTER FUNCTION fav_genres
 	(@ID int,
 	@num_genres int)
@@ -493,6 +503,15 @@ AS
 BEGIN
     DELETE FROM playlist
     WHERE user_id = @user_id AND playlist_id = @playlist_id;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE delete_album
+    @album_id int
+AS
+BEGIN
+    DELETE FROM album
+    WHERE album_id = @album_id;
 END;
 GO
 
@@ -712,5 +731,117 @@ BEGIN
         SET rating = @rating, review = @review
         WHERE user_id = @user_id AND song_id = @song_id;
     END
+END;
+GO
+
+CREATE OR ALTER PROCEDURE view_albums
+    @ID int
+AS
+SELECT album.album_id, album.name, count(song.song_id) AS num_songs, dbo.convert_seconds_to_string(sum(song.duration)) AS total_listening_time
+FROM playlist
+         LEFT JOIN song_playlist ON song_playlist.playlist_id = playlist.playlist_id AND song_playlist.user_id = playlist.user_id
+         LEFT JOIN song ON song.song_id = song_playlist.song_id
+WHERE playlist.user_id = @ID AND playlist.is_public IN (@restrict_public, 'y')
+GROUP BY playlist.playlist_id, playlist.name;
+GO
+
+CREATE OR ALTER PROCEDURE get_album_by_id
+    @album_id int
+AS
+BEGIN
+    SELECT album.*, count(song.song_id) AS num_songs, dbo.convert_seconds_to_string(sum(song.duration)) AS duration
+    FROM album
+             LEFT JOIN song_album ON album.album_id = song_album.album_id
+             LEFT JOIN song ON song_album.song_id = song.song_id
+    WHERE album.album_id = @album_id
+    GROUP BY album.album_id, album.name, album.release_date, num_songs;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE get_songs_by_album
+    @album_id int
+AS
+BEGIN
+    SELECT song_id
+    FROM song_album
+    WHERE album_id = @album_id;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE get_genres_by_album
+    @album_id int
+AS
+BEGIN
+    SELECT genre_name
+    FROM album_genre
+    WHERE album_id = @album_id;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE get_genres_by_song
+    @song_id int
+AS
+BEGIN
+    SELECT genre_name
+    FROM song_genre
+    WHERE album_id = @album_id;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE get_genre_by_name
+    @genre_name varchar(25)
+AS
+BEGIN
+    SELECT *
+    FROM genre
+    WHERE name = @genre_name;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE make_playlist
+    @user_id int,
+    @playlist_id int,
+    @name varchar(50),
+    @is_public char(1)
+AS
+BEGIN
+    INSERT INTO playlist(user_id, playlist_id, name, is_public)
+    VALUES (@user_id, @playlist_id, @name, @is_public);
+END;
+GO
+
+CREATE OR ALTER PROCEDURE make_album
+    @name varchar(50)
+AS
+BEGIN
+    INSERT INTO album(name)
+    VALUES (@name);
+END;
+GO
+
+CREATE OR ALTER FUNCTION generate_playlist_id(@user_id int)
+RETURNS int
+AS
+BEGIN
+    DECLARE @Result int
+    SELECT @Result = max(playlist_id) + 1
+    FROM playlist
+    WHERE user_id = @user_id
+    SELECT @Result =
+        CASE
+            WHEN @Result IS NULL THEN 1
+            ELSE @Result
+        END
+    RETURN @Result;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE add_album_artist
+    @album_id int,
+    @artist_id int
+AS
+BEGIN
+    INSERT INTO album_artist(album_id, artist_id)
+    VALUES (album_id, artist_id);
 END;
 GO
