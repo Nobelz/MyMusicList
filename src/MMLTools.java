@@ -30,7 +30,7 @@ public class MMLTools {
 
             return new Playlist(user, playlistID, playlistResultSet.getInt("duration_value"),
                     playlistResultSet.getString("duration"), playlistResultSet.getString("name"),
-                    songs, canEdit);
+                    songs, canEdit, playlistResultSet.getString("is_public").equals("y"));
         } else
             throw new SQLException("Playlist not found");
     }

@@ -6,8 +6,9 @@ public class Playlist {
     private final String name;
     private final Song[] songs;
     private final boolean canEdit;
+    private final boolean isPublic;
 
-    public Playlist(User user, int playlistID, int durationValue, String duration, String name, Song[] songs, boolean canEdit) {
+    public Playlist(User user, int playlistID, int durationValue, String duration, String name, Song[] songs, boolean canEdit, boolean isPublic) {
         this.user = user;
         this.playlistID = playlistID;
         this.durationValue = durationValue;
@@ -15,6 +16,7 @@ public class Playlist {
         this.name = name;
         this.songs = songs;
         this.canEdit = canEdit;
+        this.isPublic = isPublic;
     }
 
     public User getUser() {
@@ -47,5 +49,9 @@ public class Playlist {
 
     public boolean isCanEdit() {
         return canEdit;
+    }
+
+    public boolean isPublic() {
+        return isPublic;
     }
 }

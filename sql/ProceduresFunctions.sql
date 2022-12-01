@@ -542,3 +542,28 @@ BEGIN
 	WHERE song_id = @ID;
 END;
 GO
+
+CREATE OR ALTER PROCEDURE delete_playlist
+    @user_id int,
+    @playlist_id int
+AS
+BEGIN
+    DELETE FROM playlist
+    WHERE user_id = @user_id AND playlist_id = @playlist_id;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE toggle_playlist_privacy
+    @user_id int,
+    @playlist_id int
+AS
+BEGIN
+    UPDATE playlist
+    SET is_public =
+        CASE
+            WHEN is_public = 'y' THEN 'n'
+            ELSE 'y'
+        END
+    WHERE @playlist_id = playlist_id AND @user_id = user_id;
+END;
+GO

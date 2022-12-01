@@ -189,13 +189,6 @@ public class MainCLI {
     private static int mainMenu(Connection connection, User user) {
         try {
             String name = user.getName();
-
-//            // TODO change when getArtist() is implemented
-//            String sql = "SELECT artist_id FROM artist WHERE artist_id = " + userID + ";";
-//            Statement statement = connection.createStatement();
-//            statement.execute(sql);
-//
-//            ResultSet resultSet = statement.getResultSet();
             boolean isArtist = user instanceof Artist;
 
             clearConsole();
@@ -270,7 +263,7 @@ public class MainCLI {
             e.printStackTrace(System.err);
             scanner.nextLine();
             return 1;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Login Menu.");
             e.printStackTrace(System.err);
             scanner.nextLine();
@@ -499,33 +492,130 @@ public class MainCLI {
         }
     }
 
+    /*
+    >0: songID
+    0: Return with repeat
+    -1: Return with no repeat
+    -2: Error: return with no repeat
+     */
     private static int viewPlaylist(Connection connection, User user, Playlist playlist) {
         clearConsole();
+        System.out.println(playlist.getName());
+        if (playlist.isPublic())
+            System.out.println("Public playlist by " + playlist.getUser().getName());
+        else
+            System.out.println("Private playlist by " + playlist.getUser().getName());
 
+        if (playlist.getSongs().length == 0)
+            System.out.println("No songs yet.");
+        else {
+            System.out.printf("    %-30s %-12s\n", "Name", "Duration");
+            for (int i = 0; i < playlist.getSongs().length; i++) {
+                Song song = playlist.getSongs()[i];
+                if (i < 9)
+                    System.out.printf((i + 1) + ":  %-30s %-12s\n", song.getName(), song.getDuration());
+                else
+                    System.out.printf((i + 1) + ": %-30s %-12s\n", song.getName(), song.getDuration());
+            }
+        }
+        if (playlist.isCanEdit()) {
+            System.out.println((playlist.getNumSongs() + 1) + ": Remove Songs");
+            System.out.println((playlist.getNumSongs() + 2) + ": Toggle Playlist Privacy");
+            System.out.println((playlist.getNumSongs() + 3) + ": Delete Playlist");
+        }
+
+        System.out.print("Select an Entry: ");
         try {
-            // TODO Fix and Implement
+            int input = scanner.nextInt();
+            scanner.nextLine(); // Read end line character
+            if (input < 1 || input > playlist.getNumSongs() + 3 ||
+                    (!playlist.isCanEdit() && input > playlist.getNumSongs()))
+                throw new InputMismatchException("Incorrect input given");
 
-            throw new SQLException("Not implemented");
-//            ResultSet resultSet = statement.getResultSet();
-//
-//            if (resultSet.next()) {
-//                System.out.println(resultSet.getString(1));
-//
-//                String sql = "{call search (" + userID + ", ?, 10, 1, 'y', 'y', 'y', 'y', 'y')}";
-//                CallableStatement callableStatement = connection.prepareCall(sql);
-//
-//                callableStatement.setString(1, query);
-//                ResultSet resultSet = callableStatement.executeQuery();
-//
-//                LinkedList<SearchResult> results = new LinkedList<>();
-//
-//            } else
-//                throw new SQLException("Could not find playlist");
+            if (input == playlist.getNumSongs() + 3) {
+                clearConsole();
+                System.out.print("Are you sure you want to delete this playlist? 'y' or 'n': ");
+                String line = scanner.nextLine();
+
+                if (line.length() != 1 || (line.charAt(0) != 'y' && line.charAt(0) != 'n'))
+                    throw new InputMismatchException("Incorrect privacy input");
+
+                if (line.charAt(0) == 'n')
+                    return 0;
+
+                String sql = "{call delete_playlist (" + playlist.getUser().getUserID() + ", " +
+                        playlist.getPlaylistID() + ")}";
+                CallableStatement callableStatement = connection.prepareCall(sql);
+                callableStatement.executeQuery();
+
+                System.out.println("Playlist deleted. Returning to Playlist Menu.");
+                scanner.nextLine();
+                return -1;
+            } else if (input == playlist.getNumSongs() + 2) {
+                if (playlist.isPublic())
+                    System.out.print("Are you sure you want to make this playlist private? 'y' or 'n': ");
+                else
+                    System.out.print("Are you sure you want to make this playlist public? 'y' or 'n': ");
+
+                String line = scanner.nextLine();
+                if (line.length() != 1 || (line.charAt(0) != 'y' && line.charAt(0) != 'n'))
+                    throw new InputMismatchException("Incorrect privacy input");
+
+                if (line.charAt(0) == 'n')
+                    return 0;
+
+                String sql = "{call toggle_playlist_privacy (" + playlist.getUser().getUserID() + ", " +
+                        playlist.getPlaylistID() + ")}";
+                CallableStatement callableStatement = connection.prepareCall(sql);
+                callableStatement.executeQuery();
+
+                if (playlist.isPublic())
+                    System.out.println("Playlist was made private.");
+                else
+                    System.out.println("Playlist was made public.");
+                scanner.nextLine();
+
+                return 0;
+            } else if (input == playlist.getNumSongs() + 1) {
+                System.out.printf("Enter the numbers of the songs you want deleted, separated by commas: ");
+                String line = scanner.nextLine();
+                String[] entries = line.split(",");
+                int[] songEntries = new int[entries.length];
+
+                if (entries.length == 0)
+                    throw new InputMismatchException("No entries specified");
+
+                for (int i = 0; i < entries.length; i++) {
+                    int parsed = Integer.parseInt(entries[i]) - 1;
+                    if (parsed < 0 || parsed >= playlist.getNumSongs())
+                        throw new InputMismatchException("Entry number not valid");
+                    songEntries[i] = parsed;
+                }
+
+                for (int i = 0; i < songEntries.length; i++) {
+                    String sql = "{call remove_from_playlist (" + songEntries[i] + ", " +
+                            playlist.getUser().getUserID() + ", " + playlist.getPlaylistID() + ")}";
+                    CallableStatement callableStatement = connection.prepareCall(sql);
+                    callableStatement.executeQuery();
+                }
+
+                System.out.println("Songs removed.");
+                scanner.nextLine();
+
+                return 0;
+            }
+
+            return playlist.getSongs()[input - 1].getSongID();
+        } catch (InputMismatchException e) {
+            System.out.println("Incorrect menu output. Please try again");
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+            return 0;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Playlist Menu.");
             e.printStackTrace(System.err);
             scanner.nextLine();
-            return -1;
+            return -2;
         }
     }
 }
