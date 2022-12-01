@@ -13,7 +13,7 @@ public class MainCLI {
             + "trustServerCertificate=true;"
             + "loginTimeout=10;";
 
-    private static final Scanner scanner = new Scanner(System.in);
+    private static Scanner scanner = new Scanner(System.in);
 
     // TODO Attribution required https://stackoverflow.com/questions/2979383/how-to-clear-the-console
     private static void clearConsole() {
@@ -634,8 +634,7 @@ public class MainCLI {
             return playlist.getSongs()[input - 1].getSongID();
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect menu output. Please try again.");
-            if (scanner.hasNextLine())
-                scanner.nextLine();
+            scanner = new Scanner(System.in);
             e.printStackTrace(System.err);
             scanner.nextLine();
             return -1;
