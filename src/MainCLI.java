@@ -65,14 +65,16 @@ public class MainCLI {
                 if (userID > 0) {
                     User user = authenticateUser(connection, userID);
                     while (mainMenu(connection, user) == 1);
-                }
+                } else
+                    throw new InputMismatchException("Incorrect username");
             } else if (input == 2) {
                 int userID = registerScreen(connection);
                
                 if (userID > 0) {
                     User user = authenticateUser(connection, userID);
                     while (mainMenu(connection, user) == 1);
-                }
+                } else
+                    throw new InputMismatchException("Incorrect registration details");
             } else {
                 connection.close();
                 System.exit(0); // Exits program
@@ -714,16 +716,16 @@ public class MainCLI {
             if (avgRating < 0)
                 System.out.println("Not rated yet");
             else
-                System.out.println("Average rating: " + Math.round(avgRating * 10) / 10.0 + "out of 10");
+                System.out.println("Average rating: " + Math.round(avgRating * 10) / 10.0 + " out of 10");
             System.out.println("Number of plays: " + numPlays);
             if (numPlaylists == 1)
-                System.out.println("Found in " + numPlaylists + "playlist");
+                System.out.println("Found in " + numPlaylists + " playlist");
             else
-                System.out.println("Found in " + numPlaylists + "playlists");
+                System.out.println("Found in " + numPlaylists + " playlists");
             if (numAlbums == 1)
-                System.out.println("Found in " + numPlaylists + "album");
+                System.out.println("Found in " + numPlaylists + " album");
             else
-                System.out.println("Found in " + numPlaylists + "albums");
+                System.out.println("Found in " + numPlaylists + " albums");
 
             System.out.println("1: Add to Playlist");
             System.out.println("2: Return");
