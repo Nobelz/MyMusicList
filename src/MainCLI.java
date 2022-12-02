@@ -614,10 +614,7 @@ public class MainCLI {
                     clearConsole();
                     System.out.println("Your Favorite Artists:");
                     try {
-                        String sql = "SELECT dbo.fav_artists(" + user.getUserID() + ", 10)";
-//                        String sql = "{call fav_artists (" + user.getUserID() + ", 10)}";
-//                        CallableStatement callableStatement = connection.prepareCall(sql);
-//                        ResultSet resultSet = callableStatement.executeQuery();
+                        String sql = "SELECT * FROM dbo.fav_artists(" + user.getUserID() + ", 10)";
                         Statement statement = connection.createStatement();
                         statement.execute(sql);
                         ResultSet resultSet = statement.getResultSet();
@@ -652,9 +649,10 @@ public class MainCLI {
                     clearConsole();
                     System.out.println("Your Favorite Genres:");
                     try {
-                        String sql = "{call fav_genres (" + user.getUserID() + ", 10)}";
-                        CallableStatement callableStatement = connection.prepareCall(sql);
-                        ResultSet resultSet = callableStatement.executeQuery();
+                        String sql = "SELECT * FROM dbo.fav_genres(" + user.getUserID() + ", 10)";
+                        Statement statement = connection.createStatement();
+                        statement.execute(sql);
+                        ResultSet resultSet = statement.getResultSet();
 
                         int i = 0;
                         System.out.printf("    %-30s %-5s\n", "Name", "Listens");
@@ -688,9 +686,10 @@ public class MainCLI {
                     clearConsole();
                     System.out.println("Your Favorite Songs:");
                     try {
-                        String sql = "{call fav_songs (" + user.getUserID() + ", 10)}";
-                        CallableStatement callableStatement = connection.prepareCall(sql);
-                        ResultSet resultSet = callableStatement.executeQuery();
+                        String sql = "SELECT * FROM dbo.fav_songs(" + user.getUserID() + ", 10)";
+                        Statement statement = connection.createStatement();
+                        statement.execute(sql);
+                        ResultSet resultSet = statement.getResultSet();
 
                         int i = 0;
                         System.out.printf("    %-30s %-5s\n", "Name", "Listens");
@@ -724,9 +723,10 @@ public class MainCLI {
                     clearConsole();
                     System.out.println("Most Popular Songs:");
                     try {
-                        String sql = "{call most_popular_songs (" + user.getUserID() + ", 10)}";
-                        CallableStatement callableStatement = connection.prepareCall(sql);
-                        ResultSet resultSet = callableStatement.executeQuery();
+                        String sql = "SELECT * FROM dbo.most_popular_songs(" + user.getUserID() + ", 10)";
+                        Statement statement = connection.createStatement();
+                        statement.execute(sql);
+                        ResultSet resultSet = statement.getResultSet();
 
                         int i = 0;
                         System.out.printf("    %-30s %-5s\n", "Name", "Total Listens");
@@ -760,9 +760,10 @@ public class MainCLI {
                     clearConsole();
                     System.out.println("Highest Rated Songs:");
                     try {
-                        String sql = "{call highest_rated_songs (" + user.getUserID() + ", 10)}";
-                        CallableStatement callableStatement = connection.prepareCall(sql);
-                        ResultSet resultSet = callableStatement.executeQuery();
+                        String sql = "SELECT * FROM dbo.highest_rated_songs(" + user.getUserID() + ", 10)";
+                        Statement statement = connection.createStatement();
+                        statement.execute(sql);
+                        ResultSet resultSet = statement.getResultSet();
 
                         int i = 0;
                         System.out.printf("    %-30s %-5s\n", "Name", "Average Rating");
