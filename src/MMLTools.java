@@ -284,4 +284,24 @@ public class MMLTools {
 
         return recommendations;
     }
+
+    public static Song[] findSongs(Connection connection, Artist artist) throws SQLException {
+        String sql = "{call view_songs (" + artist.getUserID() + ")}";
+        CallableStatement callableStatement = connection.prepareCall(sql);
+        ResultSet resultSet = callableStatement.executeQuery();
+
+        LinkedList<Song> songList = new LinkedList<>();
+
+        int i = 0;
+        while (resultSet.next()) {
+            Song song = getSong(connection, resultSet.getInt(1));
+            songList.add(song);
+            i++;
+        }
+
+        Song[] songs = new Song[i];
+        songList.toArray(songs);
+
+        return songs;
+    }
 }

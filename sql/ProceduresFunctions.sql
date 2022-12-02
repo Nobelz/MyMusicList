@@ -308,6 +308,17 @@ BEGIN
 END;
 GO
 
+CREATE OR ALTER PROCEDURE add_to_album
+    @song_id int,
+    @album_id int
+AS
+BEGIN
+    INSERT INTO song_album(song_id, album_id)
+    VALUES (@song_id, @album_id);
+END;
+GO
+
+
 CREATE OR ALTER PROCEDURE remove_from_playlist
 	@song_id int,
 	@user_id int,
@@ -832,6 +843,16 @@ BEGIN
 END;
 GO
 
+CREATE OR ALTER PROCEDURE make_song
+    @name varchar(50),
+    @duration int
+AS
+BEGIN
+    INSERT INTO song(name, duration)
+    VALUES (@name, @duration);
+END;
+GO
+
 CREATE OR ALTER FUNCTION generate_playlist_id(@user_id int)
 RETURNS int
 AS
@@ -869,3 +890,22 @@ BEGIN
 END;
 GO
 
+CREATE OR ALTER PROCEDURE add_song_artist
+    @song_id int,
+    @artist_id int
+AS
+BEGIN
+    INSERT INTO song_artist(song_id, artist_id)
+    VALUES (@song_id, @artist_id);
+END;
+GO
+
+CREATE OR ALTER PROCEDURE add_song_genre
+    @song_id int,
+    @genre_name varchar(25)
+AS
+BEGIN
+    INSERT INTO song_genre(song_id, genre_name)
+    VALUES (@song_id, @genre_name);
+END;
+GO

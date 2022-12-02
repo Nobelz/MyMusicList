@@ -41,6 +41,15 @@ public class Song {
         return genres;
     }
 
+    public boolean isArtist(User user) {
+        for (Artist artist : getArtists()) {
+            if (user.getUserID() == artist.getUserID())
+                return true;
+        }
+
+        return false;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
