@@ -58,7 +58,7 @@ CREATE OR ALTER FUNCTION avg_rating_song(@ID int)
 AS
 BEGIN
 	DECLARE @avg_rating float
-	SELECT @avg_rating = avg(rating)
+	SELECT @avg_rating = avg(CAST(rating AS float))
 		FROM rating
 		WHERE rating.song_id = @ID
 	RETURN @avg_rating;
