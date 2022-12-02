@@ -36,4 +36,9 @@ public class User {
 
         return userID == user.userID;
     }
+
+    @Override
+    public int hashCode() {
+        return userID;
+    }
 }

@@ -496,6 +496,16 @@ BEGIN
 END;
 GO
 
+CREATE OR ALTER PROCEDURE get_artists_by_album
+	@ID int
+AS
+BEGIN
+	SELECT artist_id
+	FROM album_artist
+	WHERE album_id = @ID;
+END;
+GO
+
 CREATE OR ALTER PROCEDURE delete_playlist
     @user_id int,
     @playlist_id int
@@ -742,7 +752,8 @@ BEGIN
     FROM album
              LEFT JOIN song_album ON song_album.album_id = album.album_id
              LEFT JOIN song ON song.song_id = song_album.song_id
-    WHERE album.album_id = @ID
+			 LEFT JOIN album_artist ON album.album_id = album_artist.album_id
+    WHERE album_artist.artist_id = @ID
     GROUP BY album.album_id, album.name;
 END;
 GO
@@ -756,7 +767,7 @@ BEGIN
              LEFT JOIN song_album ON album.album_id = song_album.album_id
              LEFT JOIN song ON song_album.song_id = song.song_id
     WHERE album.album_id = @album_id
-    GROUP BY album.album_id, album.name, album.release_date, num_songs;
+    GROUP BY album.album_id, album.name, album.release_date;
 END;
 GO
 
@@ -786,7 +797,7 @@ AS
 BEGIN
     SELECT genre_name
     FROM song_genre
-    WHERE album_id = @album_id;
+    WHERE song_id = @song_id;
 END;
 GO
 
@@ -794,7 +805,7 @@ CREATE OR ALTER PROCEDURE get_genre_by_name
     @genre_name varchar(25)
 AS
 BEGIN
-    SELECT *
+    SELECT name, description
     FROM genre
     WHERE name = @genre_name;
 END;
@@ -844,6 +855,17 @@ CREATE OR ALTER PROCEDURE add_album_artist
 AS
 BEGIN
     INSERT INTO album_artist(album_id, artist_id)
-    VALUES (album_id, artist_id);
+    VALUES (@album_id, @artist_id);
 END;
 GO
+
+CREATE OR ALTER PROCEDURE add_album_genre
+    @album_id int,
+    @genre_name varchar(25)
+AS
+BEGIN
+    INSERT INTO album_genre(album_id, genre_name)
+    VALUES (@album_id, @genre_name);
+END;
+GO
+

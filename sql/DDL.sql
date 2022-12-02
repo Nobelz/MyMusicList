@@ -44,7 +44,7 @@ CREATE TABLE song
 CREATE TABLE genre
 (
 	name varchar(25) NOT NULL,
-	description varchar(200),
+	description varchar(200) NOT NULL,
 
 	CONSTRAINT genre_PK PRIMARY KEY (name)
 );

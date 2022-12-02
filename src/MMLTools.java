@@ -79,7 +79,7 @@ public class MMLTools {
             LinkedList<Genre> genreList = new LinkedList<>();
             int k = 0;
             while (genreResultSet.next()) {
-                artistList.add(getArtist(connection, genreResultSet.getInt(1)));
+                genreList.add(getGenre(connection, genreResultSet.getString(1)));
                 k++;
             }
 
@@ -89,19 +89,20 @@ public class MMLTools {
             if (genres.length == 0)
                 throw new SQLException("No genres found for album");
 
-            return new Album(albumID, albumResultSet.getString("total_listening_time"),
+            return new Album(albumID, albumResultSet.getString("duration"),
                     albumResultSet.getString("name"), songs, artists, genres, canEdit);
         } else
             throw new SQLException("Playlist not found");
     }
 
     public static Genre getGenre(Connection connection, String name) throws SQLException {
-        String sql = "{call get_genre_by_name (" + name + ")}";
+        String sql = "{call get_genre_by_name (?)}";
         CallableStatement callableStatement = connection.prepareCall(sql);
+        callableStatement.setString(1, name);
         ResultSet resultSet = callableStatement.executeQuery();
 
         if (resultSet.next())
-            return new Genre(name, resultSet.getString(2));
+            return new Genre(name, resultSet.getString("description"));
         else
             throw new SQLException("Genre not found");
     }
@@ -164,7 +165,7 @@ public class MMLTools {
             LinkedList<Genre> genreList = new LinkedList<>();
             int j = 0;
             while (genreResultSet.next()) {
-                artistList.add(getArtist(connection, genreResultSet.getInt(1)));
+                genreList.add(getGenre(connection, genreResultSet.getString(1)));
                 j++;
             }
 
@@ -222,7 +223,7 @@ public class MMLTools {
     }
 
     public static Album[] findAlbums(Connection connection, Artist artist) throws SQLException {
-        String sql = "{call view_albums (" + artist.getUserID() + ", 'n')}";
+        String sql = "{call view_albums (" + artist.getUserID() + ")}";
         CallableStatement callableStatement = connection.prepareCall(sql);
         ResultSet resultSet = callableStatement.executeQuery();
 

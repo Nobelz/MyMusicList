@@ -1471,7 +1471,7 @@ public class MainCLI {
             genreSet.toArray(genres);
 
             System.out.print("Enter the usernames of other collaborating artists, separated by commas, no spaces. " +
-                    "If you are the sole playlist, just press ENTER: ");
+                    "If you are the sole artist, just press ENTER: ");
             line = scanner.nextLine();
             entries = line.split(",");
 
@@ -1479,7 +1479,8 @@ public class MainCLI {
             artistSet.add(artist);
             try {
                 for (String entry : entries) {
-                    artistSet.add(MMLTools.getArtist(connection, Integer.parseInt(entry)));
+                    if (entry.length() != 0)
+                        artistSet.add(MMLTools.getArtist(connection, MMLTools.getUser(connection, entry).getUserID()));
                 }
             } catch (SQLException e) {
                 throw new InputMismatchException("Invalid artist input");
@@ -1488,18 +1489,28 @@ public class MainCLI {
             Artist[] artists = new Artist[artistSet.size()];
             artistSet.toArray(artists);
 
-            String sql = "{call make_album (?)}";
+            String sql = "BEGIN TRANSACTION [Transaction1]";
+            Statement statement = connection.createStatement();
+            statement.execute(sql);
+            
+            sql = "{call make_album (?)}";
             CallableStatement callableStatement = connection.prepareCall(sql);
             callableStatement.setString(1, name);
             callableStatement.execute();
-            ResultSet resultSet = callableStatement.getGeneratedKeys();
 
             int albumID;
+            sql = "SELECT max(album_id) FROM album";
+            statement = connection.createStatement();
+            statement.execute(sql);
+
+            ResultSet resultSet = statement.getResultSet();
             if (resultSet.next()) {
                 albumID = resultSet.getInt(1);
             } else
                 throw new SQLException("Insertion didn't work");
 
+            System.out.println(albumID);
+            
             for (Artist a : artists) {
                 sql = "{call add_album_artist (" + albumID + ", " + a.getUserID() + ")}";
                 callableStatement = connection.prepareCall(sql);
@@ -1507,18 +1518,29 @@ public class MainCLI {
             }
 
             for (Genre g : genres) {
-                sql = "{call add_album_genre(" + albumID + ", " + g.getName() + ")}";
+                sql = "{call add_album_genre(" + albumID + ", ?)}";
                 callableStatement = connection.prepareCall(sql);
+                callableStatement.setString(1, g.getName());
                 callableStatement.execute();
             }
 
+            sql = "COMMIT TRANSACTION [Transaction1]";
+            statement = connection.createStatement();
+            statement.execute(sql);
+
             System.out.println("Album created. Returning to Album Menu.");
+            scanner.nextLine();
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect input entered. Returning to Album Menu.");
             scanner = new Scanner(System.in);
             e.printStackTrace(System.err);
             scanner.nextLine();
         } catch (SQLException e) {
+            try {
+                String sql = "ROLLBACK TRANSACTION [Transaction1]";
+                Statement statement = connection.createStatement();
+                statement.execute(sql);
+            } catch (SQLException ignored) {}     
             System.out.println("Error connecting to SQL database. Returning to Album Menu.");
             e.printStackTrace(System.err);
             scanner.nextLine();
