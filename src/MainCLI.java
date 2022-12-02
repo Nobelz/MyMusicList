@@ -38,6 +38,8 @@ public class MainCLI {
             loginMenu(connection);
         } catch (SQLException e) {
             System.out.println("Failed to connect to database. Exiting...");
+            e.printStackTrace(System.err);
+            System.exit(-1);
         }
         scanner.close();
     }
@@ -51,6 +53,7 @@ public class MainCLI {
         System.out.println("3: Exit");
 
         try {
+            System.out.print("Select an Entry: ");
             int input = scanner.nextInt();
             scanner.nextLine(); // Read end line character
             if (input != 1 && input != 2 && input != 3)
@@ -85,6 +88,7 @@ public class MainCLI {
             loginMenu(connection);
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Exiting.");
+            e.printStackTrace(System.err);
             System.exit(-1);
         }
     }
@@ -115,10 +119,12 @@ public class MainCLI {
             throw new Exception("Username incorrect or not found.");
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Login Menu.");
+            e.printStackTrace(System.err);
             scanner.nextLine();
             return -1;
         } catch (Exception e) {
             System.out.println("Username was incorrect or not found. Returning to Login Menu.");
+            e.printStackTrace(System.err);
             scanner.nextLine();
             return 0;
         }
@@ -159,11 +165,13 @@ public class MainCLI {
                     throw new Exception("Other SQL Exception");
             } catch (Exception ex) {
                 System.out.println("Error connecting to SQL database. Returning to Login Menu.");
+                e.printStackTrace(System.err);
                 scanner.nextLine();
                 return -1;
             }
         } catch (Exception e) {
             System.out.println("Error connecting to SQL database. Returning to Login Menu.");
+            e.printStackTrace(System.err);
             scanner.nextLine();
             return -1;
         }
@@ -203,6 +211,7 @@ public class MainCLI {
                 System.out.println("8: Exit Program");
             }
 
+            System.out.print("Select an Entry: ");
             int input = scanner.nextInt();
             scanner.nextLine(); // Read end line character
             if (input < 1 || input > 8)
@@ -352,6 +361,7 @@ public class MainCLI {
             return 1;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Login Menu.");
+            e.printStackTrace(System.err);
             scanner.nextLine();
             return -1;
         }
@@ -448,6 +458,7 @@ public class MainCLI {
             return new int[] {-1};
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Main Menu.");
+            e.printStackTrace(System.err);
             scanner.nextLine();
             return new int[] {-1};
         }
@@ -505,8 +516,8 @@ public class MainCLI {
             scanner.nextLine();
             return -1;
         } catch (SQLException e) {
-
             System.out.println("Error connecting to SQL database. Returning to Main Menu.");
+            e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
         }
@@ -526,6 +537,7 @@ public class MainCLI {
         System.out.println("2: View Auto-generated Recommendations");
         System.out.println("3: Return to Main Menu");
 
+        System.out.print("Select an Entry: ");
         int input = scanner.nextInt();
         scanner.nextLine();
         if (input < 1 || input > 3)
@@ -569,6 +581,7 @@ public class MainCLI {
             return -1;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Main Menu.");
+            e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
         }
@@ -624,6 +637,7 @@ public class MainCLI {
                         scanner.nextLine();
                     } catch (SQLException e) {
                         System.out.println("Error connecting to SQL database. Returning to Query Menu.");
+                        e.printStackTrace(System.err);
                         scanner.nextLine();
                     }
                     return 0;
@@ -659,6 +673,7 @@ public class MainCLI {
                         scanner.nextLine();
                     } catch (SQLException e) {
                         System.out.println("Error connecting to SQL database. Returning to Query Menu.");
+                        e.printStackTrace(System.err);
                         scanner.nextLine();
                     }
                     return 0;
@@ -694,6 +709,7 @@ public class MainCLI {
                         scanner.nextLine();
                     } catch (SQLException e) {
                         System.out.println("Error connecting to SQL database. Returning to Query Menu.");
+                        e.printStackTrace(System.err);
                         scanner.nextLine();
                     }
                     return 0;
@@ -728,6 +744,7 @@ public class MainCLI {
                         scanner.nextLine();
                     } catch (SQLException e) {
                         System.out.println("Error connecting to SQL database. Returning to Query Menu.");
+                        e.printStackTrace(System.err);
                         scanner.nextLine();
                     }
                     return 0;
@@ -762,6 +779,7 @@ public class MainCLI {
                         scanner.nextLine();
                     } catch (SQLException e) {
                         System.out.println("Error connecting to SQL database. Returning to Query Menu.");
+                        e.printStackTrace(System.err);
                         scanner.nextLine();
                     }
                     return 0;
@@ -856,6 +874,7 @@ public class MainCLI {
             return -1;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Main Menu.");
+            e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
         }
@@ -895,6 +914,7 @@ public class MainCLI {
             scanner.nextLine();
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Playlist Menu.");
+            e.printStackTrace(System.err);
             scanner.nextLine();
         }
     }
@@ -1034,6 +1054,7 @@ public class MainCLI {
             return -1;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Playlist Menu.");
+            e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
         }
@@ -1119,6 +1140,7 @@ public class MainCLI {
             return -1;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Song Menu.");
+            e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
         }
@@ -1269,6 +1291,7 @@ public class MainCLI {
             return -1;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning.");
+            e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
         }
@@ -1403,6 +1426,7 @@ public class MainCLI {
             return -1;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning.");
+            e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
         }
@@ -1460,6 +1484,7 @@ public class MainCLI {
                     throw new Exception("Other SQL Exception");
             } catch (Exception ex) {
                 System.out.println("Error connecting to SQL database. Returning.");
+                e.printStackTrace(System.err);
                 scanner.nextLine();
             }
         }
@@ -1517,6 +1542,7 @@ public class MainCLI {
                     throw new Exception("Other SQL Exception");
             } catch (Exception ex) {
                 System.out.println("Error connecting to SQL database. Returning.");
+                e.printStackTrace(System.err);
                 scanner.nextLine();
             }
         }
@@ -1569,6 +1595,7 @@ public class MainCLI {
             return -1;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Main Menu.");
+            e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
         }
@@ -1640,6 +1667,7 @@ public class MainCLI {
             return -1;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Main Menu.");
+            e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
         }
@@ -1681,6 +1709,7 @@ public class MainCLI {
                     throw new Exception("Other SQL Exception");
             } catch (Exception ex) {
                 System.out.println("Error connecting to SQL database. Returning.");
+                e.printStackTrace(System.err);
                 scanner.nextLine();
             }
         }
@@ -1722,6 +1751,7 @@ public class MainCLI {
             scanner.nextLine();
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Recommendation Menu.");
+            e.printStackTrace(System.err);
             scanner.nextLine();
         }
     }
@@ -1851,6 +1881,7 @@ public class MainCLI {
             return -1;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Album Menu.");
+            e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
         }
@@ -1951,6 +1982,7 @@ public class MainCLI {
                 statement.execute(sql);
             } catch (SQLException ignored) {}     
             System.out.println("Error connecting to SQL database. Returning to Album Menu.");
+            e.printStackTrace(System.err);
             scanner.nextLine();
         }
     }
@@ -2057,6 +2089,8 @@ public class MainCLI {
                 statement.execute(sql);
             } catch (SQLException ignored) {}
             System.out.println("Error connecting to SQL database. Returning to Song Menu.");
+            e.printStackTrace(System.err);
+            e.printStackTrace(System.err);
             scanner.nextLine();
         }
     }
