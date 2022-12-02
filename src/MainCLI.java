@@ -1,3 +1,5 @@
+import jdk.nashorn.internal.codegen.CompilerConstants;
+
 import java.sql.*;
 import java.util.HashSet;
 import java.util.InputMismatchException;
@@ -200,7 +202,7 @@ public class MainCLI {
             System.out.println("2: View/Edit Playlists");
             System.out.println("3: View Recommendations");
             System.out.println("4: Other Queries...");
-            System.out.println("5: Profile Settings");
+            System.out.println("5: Delete User Account");
             if (isArtist) {
                 System.out.println("6: Artist Menu");
                 System.out.println("7: Logout");
@@ -256,10 +258,25 @@ public class MainCLI {
                 case 4:
                     return 1;
                 case 5:
-                    while (profileSettings(connection, user) == 1);
-                    break;
+                    System.out.print("Are you sure you want to delete your account? All songs, albums, playlists, " +
+                            "and stats will be deleted. 'y' or 'n': ");
+                    String line = scanner.nextLine();
+
+                    if (line.length() != 1 || (line.charAt(0) != 'y' && line.charAt(0) != 'n'))
+                        throw new InputMismatchException("Incorrect input");
+
+                    if (line.charAt(0) == 'n')
+                        return 0;
+
+                    String sql = "{call deletee_user (" + user.getUserID() + ")}";
+                    CallableStatement callableStatement = connection.prepareCall(sql);
+                    callableStatement.execute();
+
+                    System.out.println("Account deleted. Returning to Login Menu.");
+                    scanner.nextLine();
+
+                    return 0;
                 case 6:
-                    code = 0;
                     if (isArtist) {
                         code = 0;
                         while (code == 0 || code == -1) {
@@ -267,6 +284,9 @@ public class MainCLI {
                                 code = artistMenu(connection, (Artist) user);
                             else throw new SQLException("User was designated as Artist but is not Artist");
                         }
+
+                        if (code == -4)
+                            return 0;
 
                         return 1;
                     } else
@@ -458,6 +478,7 @@ public class MainCLI {
     -1: Error: repeat
     -2: Return with no repeat
     -3: Error: return with no repeat
+    -4: Return to Login Menu
      */
     private static int recommendationMenu(Connection connection, User user) {
         clearConsole();
@@ -578,9 +599,27 @@ public class MainCLI {
                         }
                     }
                     return 0;
+                case 3:
+                    System.out.print("Are you sure you want to delete this artist account? All songs and albums " +
+                            "will be deleted, even if they have collaborating artists. 'y' or 'n': ");
+                    String line = scanner.nextLine();
 
+                    if (line.length() != 1 || (line.charAt(0) != 'y' && line.charAt(0) != 'n'))
+                        throw new InputMismatchException("Incorrect input");
+
+                    if (line.charAt(0) == 'n')
+                        return 0;
+
+                    String sql = "{call delete_artist (" + artist.getUserID() + ")}";
+                    CallableStatement callableStatement = connection.prepareCall(sql);
+                    callableStatement.execute();
+
+                    System.out.println("Artist account deleted. Returning to Login Menu.");
+                    scanner.nextLine();
+                    return -4;
+                default:
+                    return -2;
             }
-            return 1;
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect input given. Please try again.");
             scanner = new Scanner(System.in);
@@ -605,7 +644,7 @@ public class MainCLI {
             String privacy = scanner.nextLine();
 
             if (privacy.length() != 1 || (privacy.charAt(0) != 'y' && privacy.charAt(0) != 'n'))
-                throw new InputMismatchException("Incorrect privacy input");
+                throw new InputMismatchException("Incorrect input");
 
             String sql = "SELECT dbo.generate_playlist_id(" + user.getUserID() + ")";
             Statement statement = connection.createStatement();
@@ -694,7 +733,7 @@ public class MainCLI {
                 String line = scanner.nextLine();
 
                 if (line.length() != 1 || (line.charAt(0) != 'y' && line.charAt(0) != 'n'))
-                    throw new InputMismatchException("Incorrect privacy input");
+                    throw new InputMismatchException("Incorrect input");
 
                 if (line.charAt(0) == 'n')
                     return 0;
@@ -716,7 +755,7 @@ public class MainCLI {
 
                 String line = scanner.nextLine();
                 if (line.length() != 1 || (line.charAt(0) != 'y' && line.charAt(0) != 'n'))
-                    throw new InputMismatchException("Incorrect privacy input");
+                    throw new InputMismatchException("Incorrect input");
 
                 if (line.charAt(0) == 'n')
                     return 0;
@@ -822,7 +861,31 @@ public class MainCLI {
                 createSongScreen(connection, artist);
                 return 0;
             } else if (input == songs.length + 1) {
+                System.out.print("Enter the numbers of the songs you want deleted, separated by commas, no spaces: ");
+                String line = scanner.nextLine();
 
+                String[] entries = line.split(",");
+                int[] songEntries = new int[entries.length];
+
+                if (entries.length == 0)
+                    throw new InputMismatchException("No entries specified");
+
+                for (int i = 0; i < entries.length; i++) {
+                    int parsed = Integer.parseInt(entries[i]) - 1;
+                    if (parsed < 0 || parsed >= songs.length)
+                        throw new InputMismatchException("Entry number not valid");
+                    songEntries[i] = parsed;
+                }
+
+                for (int i = 0; i < songEntries.length; i++) {
+                    String sql = "{call remove_song (" + songs[songEntries[i]].getSongID() + ")}";
+                    CallableStatement callableStatement = connection.prepareCall(sql);
+                    callableStatement.execute();
+                }
+
+                System.out.println("Songs deleted. Returning to Song Menu.");
+                scanner.nextLine();
+                return 0;
             }
 
             return songs[input - 1].getSongID();
@@ -833,7 +896,7 @@ public class MainCLI {
             scanner.nextLine();
             return -1;
         } catch (SQLException e) {
-            System.out.println("Error connecting to SQL database. Returning to Artust Menu.");
+            System.out.println("Error connecting to SQL database. Returning to Song Menu.");
             e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;

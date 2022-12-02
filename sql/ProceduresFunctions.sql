@@ -352,6 +352,15 @@ BEGIN
 END;
 GO
 
+CREATE OR ALTER PROCEDURE remove_song
+    @song_id int
+AS
+BEGIN
+    DELETE FROM song
+    WHERE song_id = @song_id;
+END;
+GO
+
 CREATE OR ALTER FUNCTION fav_genres
 	(@ID int,
 	@num_genres int)
@@ -919,5 +928,31 @@ AS
 BEGIN
     INSERT INTO song_genre(song_id, genre_name)
     VALUES (@song_id, @genre_name);
+END;
+GO
+
+CREATE OR ALTER PROCEDURE delete_artist
+    @artist_id int
+AS
+BEGIN
+    DELETE FROM song
+    WHERE song_id IN (SELECT song_id FROM song_artist WHERE song_artist.artist_id = @artist_id);
+
+    DELETE FROM album
+    WHERE album_id IN (SELECT album_id FROM album_artist WHERE album_artist.artist_id = @artist_id);
+
+    DELETE FROM artist
+    WHERE artist_id = @artist_id;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE delete_user
+    @user_id int
+AS
+BEGIN
+    EXEC delete_artist @artist_id = @user_id;
+
+    DELETE FROM music_user
+    WHERE user_id = @user_id;
 END;
 GO
