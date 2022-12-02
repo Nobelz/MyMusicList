@@ -419,12 +419,12 @@ public class MainCLI {
 
             clearConsole();
             System.out.println("Results:");
-            System.out.printf("    %-10s %-30s\n", "Type", "Name");
+            System.out.printf("    %-10s %-50s\n", "Type", "Name");
             for (i = 0; i < resultsArray.length; i++) {
                 if (i < 9)
-                    System.out.printf((i + 1) + ":  %-10s %-30s\n", resultsArray[i].getType(), resultsArray[i].getName());
+                    System.out.printf((i + 1) + ":  %-10s %-50s\n", resultsArray[i].getType(), resultsArray[i].getName());
                 else
-                    System.out.printf((i + 1) + ": %-10s %-30s\n", resultsArray[i].getType(), resultsArray[i].getName());
+                    System.out.printf((i + 1) + ": %-10s %-50s\n", resultsArray[i].getType(), resultsArray[i].getName());
             }
             System.out.println((i + 1) + ": Return to Main Menu");
             System.out.print("Select an Entry: ");
@@ -463,7 +463,7 @@ public class MainCLI {
     private static int playlistMenu(Connection connection, User user) {
         clearConsole();
         System.out.println("Playlist Menu");
-        System.out.printf("    %-30s %-12s %-12s\n", "Name", "Song Count", "Duration");
+        System.out.printf("    %-50s %-12s %-12s\n", "Name", "Song Count", "Duration");
 
         try {
             Playlist[] playlists = MMLTools.findPlaylists(connection, user);
@@ -471,10 +471,10 @@ public class MainCLI {
             int i = 0;
             for (Playlist playlist : playlists) {
                 if (i < 9)
-                    System.out.printf((i + 1) + ":  %-30s %-12s %-12s\n", playlist.getName(),
+                    System.out.printf((i + 1) + ":  %-50s %-12s %-12s\n", playlist.getName(),
                             playlist.getNumSongs(), playlist.getDuration());
                 else
-                    System.out.printf((i + 1) + ": %-30s %-12s %-12s\n", playlist.getName(),
+                    System.out.printf((i + 1) + ": %-50s %-12s %-12s\n", playlist.getName(),
                             playlist.getNumSongs(), playlist.getDuration());
                 i++;
             }
@@ -604,13 +604,13 @@ public class MainCLI {
                         ResultSet resultSet = statement.getResultSet();
 
                         int i = 0;
-                        System.out.printf("    %-30s %-5s\n", "Name", "Listens");
+                        System.out.printf("    %-50s %-5s\n", "Name", "Listens");
                         while (resultSet.next()) {
                             if (i < 9)
-                                System.out.printf((i + 1) + ":  %-30s %-5s\n", resultSet.getString("name"),
+                                System.out.printf((i + 1) + ":  %-50s %-5s\n", resultSet.getString("name"),
                                         resultSet.getInt("total_listens"));
                             else
-                                System.out.printf((i + 1) + ": %-30s %-5s\n", resultSet.getString("name"),
+                                System.out.printf((i + 1) + ": %-50s %-5s\n", resultSet.getString("name"),
                                         resultSet.getInt("total_listens"));
                             i++;
                         }
@@ -637,14 +637,14 @@ public class MainCLI {
                         ResultSet resultSet = statement.getResultSet();
 
                         int i = 0;
-                        System.out.printf("    %-30s %-5s\n", "Name", "Listens");
+                        System.out.printf("    %-50s %-5s\n", "Name", "Listens");
                         while (resultSet.next()) {
                             if (i < 9)
-                                System.out.printf((i + 1) + ":  %-30s %-5s\n",
+                                System.out.printf((i + 1) + ":  %-50s %-5s\n",
                                         resultSet.getString("genre_name"),
                                         resultSet.getInt("total_listens"));
                             else
-                                System.out.printf((i + 1) + ": %-30s %-5s\n",
+                                System.out.printf((i + 1) + ": %-50s %-5s\n",
                                         resultSet.getString("genre_name"),
                                         resultSet.getInt("total_listens"));
                             i++;
@@ -672,14 +672,14 @@ public class MainCLI {
                         ResultSet resultSet = statement.getResultSet();
 
                         int i = 0;
-                        System.out.printf("    %-30s %-5s\n", "Name", "Listens");
+                        System.out.printf("    %-50s %-5s\n", "Name", "Listens");
                         while (resultSet.next()) {
                             if (i < 9)
-                                System.out.printf((i + 1) + ":  %-30s %-5s\n",
+                                System.out.printf((i + 1) + ":  %-50s %-5s\n",
                                         resultSet.getString("name"),
                                         resultSet.getInt("total_listens"));
                             else
-                                System.out.printf((i + 1) + ": %-30s %-5s\n",
+                                System.out.printf((i + 1) + ": %-50s %-5s\n",
                                         resultSet.getString("name"),
                                         resultSet.getInt("total_listens"));
                             i++;
@@ -701,20 +701,19 @@ public class MainCLI {
                     clearConsole();
                     System.out.println("Most Popular Songs:");
                     try {
-                        String sql = "SELECT * FROM dbo.most_popular_songs(" + user.getUserID() + ", 10)";
-                        Statement statement = connection.createStatement();
-                        statement.execute(sql);
-                        ResultSet resultSet = statement.getResultSet();
+                        String sql = "{call most_popular_songs (10)}";
+                        CallableStatement callableStatement = connection.prepareCall(sql);
+                        ResultSet resultSet = callableStatement.executeQuery();
 
                         int i = 0;
-                        System.out.printf("    %-30s %-5s\n", "Name", "Total Listens");
+                        System.out.printf("    %-50s %-5s\n", "Name", "Total Listens");
                         while (resultSet.next()) {
                             if (i < 9)
-                                System.out.printf((i + 1) + ":  %-30s %-5s\n",
+                                System.out.printf((i + 1) + ":  %-50s %-5s\n",
                                         resultSet.getString("name"),
                                         resultSet.getInt("total_listens"));
                             else
-                                System.out.printf((i + 1) + ": %-30s %-5s\n",
+                                System.out.printf((i + 1) + ": %-50s %-5s\n",
                                         resultSet.getString("name"),
                                         resultSet.getInt("total_listens"));
                             i++;
@@ -736,20 +735,19 @@ public class MainCLI {
                     clearConsole();
                     System.out.println("Highest Rated Songs:");
                     try {
-                        String sql = "SELECT * FROM dbo.highest_rated_songs(" + user.getUserID() + ", 10)";
-                        Statement statement = connection.createStatement();
-                        statement.execute(sql);
-                        ResultSet resultSet = statement.getResultSet();
+                        String sql = "{call highest_rated_songs (10)}";
+                        CallableStatement callableStatement = connection.prepareCall(sql);
+                        ResultSet resultSet = callableStatement.executeQuery();
 
                         int i = 0;
-                        System.out.printf("    %-30s %-5s\n", "Name", "Average Rating");
+                        System.out.printf("    %-50s %-5s\n", "Name", "Average Rating");
                         while (resultSet.next()) {
                             if (i < 9)
-                                System.out.printf((i + 1) + ":  %-30s %-5s\n",
+                                System.out.printf((i + 1) + ":  %-50s %-5s\n",
                                         resultSet.getString("name"),
                                         Math.round(10 * resultSet.getFloat("avg_rating")) / 10.0);
                             else
-                                System.out.printf((i + 1) + ": %-30s %-5s\n",
+                                System.out.printf((i + 1) + ": %-50s %-5s\n",
                                         resultSet.getString("name"),
                                         Math.round(10 * resultSet.getFloat("avg_rating")) / 10.0);
                             i++;
@@ -919,13 +917,13 @@ public class MainCLI {
         if (playlist.getSongs().length == 0)
             System.out.println("No songs yet.");
         else {
-            System.out.printf("    %-30s %-12s\n", "Name", "Duration");
+            System.out.printf("    %-50s %-12s\n", "Name", "Duration");
             for (int i = 0; i < playlist.getSongs().length; i++) {
                 Song song = playlist.getSongs()[i];
                 if (i < 9)
-                    System.out.printf((i + 1) + ":  %-30s %-12s\n", song.getName(), song.getDuration());
+                    System.out.printf((i + 1) + ":  %-50s %-12s\n", song.getName(), song.getDuration());
                 else
-                    System.out.printf((i + 1) + ": %-30s %-12s\n", song.getName(), song.getDuration());
+                    System.out.printf((i + 1) + ": %-50s %-12s\n", song.getName(), song.getDuration());
             }
         }
         if (playlist.isCanEdit()) {
@@ -1056,13 +1054,13 @@ public class MainCLI {
             if (songs.length == 0)
                 System.out.println("No songs yet.");
             else {
-                System.out.printf("    %-30s %-12s\n", "Name", "Duration");
+                System.out.printf("    %-50s %-12s\n", "Name", "Duration");
                 for (int i = 0; i < songs.length; i++) {
                     Song song = songs[i];
                     if (i < 9)
-                        System.out.printf((i + 1) + ":  %-30s %-12s\n", song.getName(), song.getDuration());
+                        System.out.printf((i + 1) + ":  %-50s %-12s\n", song.getName(), song.getDuration());
                     else
-                        System.out.printf((i + 1) + ": %-30s %-12s\n", song.getName(), song.getDuration());
+                        System.out.printf((i + 1) + ": %-50s %-12s\n", song.getName(), song.getDuration());
                 }
             }
             if (songs.length > 0) {
@@ -1183,13 +1181,13 @@ public class MainCLI {
             if (album.getSongs().length == 0)
                 System.out.println("No songs yet.");
             else {
-                System.out.printf("    %-30s %-12s\n", "Name", "Duration");
+                System.out.printf("    %-50s %-12s\n", "Name", "Duration");
                 for (int i = 0; i < album.getSongs().length; i++) {
                     Song song = album.getSongs()[i];
                     if (i < 9)
-                        System.out.printf((i + 1) + ":  %-30s %-12s\n", song.getName(), song.getDuration());
+                        System.out.printf((i + 1) + ":  %-50s %-12s\n", song.getName(), song.getDuration());
                     else
-                        System.out.printf((i + 1) + ": %-30s %-12s\n", song.getName(), song.getDuration());
+                        System.out.printf((i + 1) + ": %-50s %-12s\n", song.getName(), song.getDuration());
                 }
             }
 
@@ -1423,14 +1421,14 @@ public class MainCLI {
                 return;
             }
 
-            System.out.printf("    %-30s %-12s %-12s\n", "Name", "Song Count", "Duration");
+            System.out.printf("    %-50s %-12s %-12s\n", "Name", "Song Count", "Duration");
             for (int i = 0; i < playlists.length; i++) {
                 Playlist playlist = playlists[i];
                 if (i < 9)
-                    System.out.printf((i + 1) + ":  %-30s %-12s %-12s\n", playlist.getName(),
+                    System.out.printf((i + 1) + ":  %-50s %-12s %-12s\n", playlist.getName(),
                             playlist.getNumSongs(), playlist.getDuration());
                 else
-                    System.out.printf((i + 1) + ": %-30s %-12s %-12s\n", playlist.getName(),
+                    System.out.printf((i + 1) + ": %-50s %-12s %-12s\n", playlist.getName(),
                             playlist.getNumSongs(), playlist.getDuration());
             }
 
@@ -1480,14 +1478,14 @@ public class MainCLI {
                 return;
             }
 
-            System.out.printf("    %-30s %-12s %-12s\n", "Name", "Song Count", "Duration");
+            System.out.printf("    %-50s %-12s %-12s\n", "Name", "Song Count", "Duration");
             for (int i = 0; i < albums.length; i++) {
                 Album album = albums[i];
                 if (i < 9)
-                    System.out.printf((i + 1) + ":  %-30s %-12s %-12s\n", album.getName(),
+                    System.out.printf((i + 1) + ":  %-50s %-12s %-12s\n", album.getName(),
                             album.getNumSongs(), album.getDuration());
                 else
-                    System.out.printf((i + 1) + ": %-30s %-12s %-12s\n", album.getName(),
+                    System.out.printf((i + 1) + ": %-50s %-12s %-12s\n", album.getName(),
                             album.getNumSongs(), album.getDuration());
             }
 
@@ -1542,14 +1540,14 @@ public class MainCLI {
             }
 
             System.out.println("User Recommendations");
-            System.out.printf("    %-30s %-20s\n", "Name", "Recommended By");
+            System.out.printf("    %-50s %-20s\n", "Name", "Recommended By");
             for (int i = 0; i < recommendations.length; i++) {
                 Recommendation recommendation = recommendations[i];
                 if (i < 9)
-                    System.out.printf((i + 1) + ":  %-30s %-20s\n", recommendation.getSong().getName(),
+                    System.out.printf((i + 1) + ":  %-50s %-20s\n", recommendation.getSong().getName(),
                             recommendation.getFromUser().getName());
                 else
-                    System.out.printf((i + 1) + ": %-30s %-20s\n", recommendation.getSong().getName(),
+                    System.out.printf((i + 1) + ": %-50s %-20s\n", recommendation.getSong().getName(),
                             recommendation.getFromUser().getName());
             }
             System.out.println((recommendations.length + 1) + ": Return to Recommendation Menu");
@@ -1598,9 +1596,9 @@ public class MainCLI {
             while (i < recommendations.length && recommendations[i].getType().equals("artist")) {
                 Recommendation recommendation = recommendations[i];
                 if (i < 9)
-                    System.out.printf((i + 1) + ":  %-30s\n", recommendation.getSong().getName());
+                    System.out.printf((i + 1) + ":  %-50s\n", recommendation.getSong().getName());
                 else
-                    System.out.printf((i + 1) + ": %-30s\n", recommendation.getSong().getName());
+                    System.out.printf((i + 1) + ": %-50s\n", recommendation.getSong().getName());
                 i++;
             }
             if (i == 0)
@@ -1613,9 +1611,9 @@ public class MainCLI {
             while(j < recommendations.length) {
                 Recommendation recommendation = recommendations[j];
                 if (j < 9)
-                    System.out.printf((j + 1) + ":  %-30s\n", recommendation.getSong().getName());
+                    System.out.printf((j + 1) + ":  %-50s\n", recommendation.getSong().getName());
                 else
-                    System.out.printf((j + 1) + ": %-30s\n", recommendation.getSong().getName());
+                    System.out.printf((j + 1) + ": %-50s\n", recommendation.getSong().getName());
                 j++;
             }
             if (i == j)
@@ -1810,7 +1808,7 @@ public class MainCLI {
     private static int albumMenu(Connection connection, Artist artist) {
         clearConsole();
         System.out.println("Album Menu");
-        System.out.printf("    %-30s %-12s %-12s\n", "Name", "Song Count", "Duration");
+        System.out.printf("    %-50s %-12s %-12s\n", "Name", "Song Count", "Duration");
 
         try {
             Album[] albums = MMLTools.findAlbums(connection, artist);
@@ -1818,10 +1816,10 @@ public class MainCLI {
             int i = 0;
             for (Album album : albums) {
                 if (i < 9)
-                    System.out.printf((i + 1) + ":  %-30s %-12s %-12s\n", album.getName(),
+                    System.out.printf((i + 1) + ":  %-50s %-12s %-12s\n", album.getName(),
                             album.getNumSongs(), album.getDuration());
                 else
-                    System.out.printf((i + 1) + ": %-30s %-12s %-12s\n", album.getName(),
+                    System.out.printf((i + 1) + ": %-50s %-12s %-12s\n", album.getName(),
                             album.getNumSongs(), album.getDuration());
                 i++;
             }
