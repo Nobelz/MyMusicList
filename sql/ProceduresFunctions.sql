@@ -467,6 +467,69 @@ END;
 GO
 -- END USE CASE 4
 
+-- BEGIN USE CASE 5
+/*
+ Makes a rating and a review on a song.
+
+ Parameters:
+    @user_id: The User ID of the user making the review
+    @song_id: The Song ID of the song being rated/reviewed
+    @rating: The rating of the song
+    @review: The review of the song
+ */
+CREATE OR ALTER PROCEDURE make_review
+    @user_id int,
+    @song_id int,
+    @rating int,
+    @review varchar(250) = ''
+AS
+BEGIN
+    -- Checks if the review is empty
+    IF @review = ''
+        BEGIN
+            INSERT INTO rating(user_id, song_id, rating)
+            VALUES (@user_id, @song_id, @rating); -- Insert rating only
+        END
+    ELSE
+        BEGIN
+            INSERT INTO rating(user_id, song_id, rating, review)
+            VALUES (@user_id, @song_id, @rating, @review); -- Insert rating and review
+        END
+END;
+GO
+
+/*
+ Updates a rating and review of a song.
+
+ Parameters:
+    @user_id: The User ID of the user updating the review
+    @song_id: The Song ID of the song being rated/reviewed
+    @rating: The new rating of the song
+    @review: The new review of the song
+ */
+CREATE OR ALTER PROCEDURE update_review
+    @user_id int,
+    @song_id int,
+    @rating int,
+    @review varchar(250) = ''
+AS
+BEGIN
+    -- Checks if review is empty
+    IF @review = ''
+        BEGIN
+            UPDATE rating
+            SET rating = @rating, review = NULL -- Sets review to NULL
+            WHERE user_id = @user_id AND song_id = @song_id;
+        END
+    ELSE
+        BEGIN
+            UPDATE rating
+            SET rating = @rating, review = @review
+            WHERE user_id = @user_id AND song_id = @song_id; -- Updates both rating and review
+        END
+END;
+GO
+-- END USE CASE 5
 
 CREATE OR ALTER FUNCTION convert_seconds_to_string(
 	@num_seconds int
@@ -925,48 +988,6 @@ BEGIN
             ELSE @num_listens
         END
     RETURN @num_listens;
-END;
-GO
-
-CREATE OR ALTER PROCEDURE make_review
-    @user_id int,
-    @song_id int,
-    @rating int,
-    @review varchar(250)
-AS
-BEGIN
-    IF @review = ''
-    BEGIN
-        INSERT INTO rating(user_id, song_id, rating)
-        VALUES (@user_id, @song_id, @rating);
-    END
-    ELSE
-    BEGIN
-        INSERT INTO rating(user_id, song_id, rating, review)
-        VALUES (@user_id, @song_id, @rating, @review);
-    END
-END;
-GO
-
-CREATE OR ALTER PROCEDURE update_review
-    @user_id int,
-    @song_id int,
-    @rating int,
-    @review varchar(250)
-AS
-BEGIN
-    IF @review = ''
-    BEGIN
-        UPDATE rating
-        SET rating = @rating
-        WHERE user_id = @user_id AND song_id = @song_id;
-    END
-    ELSE
-    BEGIN
-        UPDATE rating
-        SET rating = @rating, review = @review
-        WHERE user_id = @user_id AND song_id = @song_id;
-    END
 END;
 GO
 
