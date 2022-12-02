@@ -265,9 +265,9 @@ public class MainCLI {
                         throw new InputMismatchException("Incorrect input");
 
                     if (line.charAt(0) == 'n')
-                        return 0;
+                        return 1;
 
-                    String sql = "{call deletee_user (" + user.getUserID() + ")}";
+                    String sql = "{call delete_user (" + user.getUserID() + ")}";
                     CallableStatement callableStatement = connection.prepareCall(sql);
                     callableStatement.execute();
 
