@@ -934,7 +934,7 @@ public class MainCLI {
         System.out.println("Joined on " + user.getDate());
 
         try {
-            String sql = "SELECT dbo.num_playlists(" + user.getUserID() + ")";
+            String sql = "SELECT dbo.num_playlists_user(" + user.getUserID() + ")";
             Statement statement = connection.createStatement();
             statement.execute(sql);
             ResultSet resultSet = statement.getResultSet();
@@ -946,11 +946,11 @@ public class MainCLI {
                 throw new SQLException("No num playlists found");
 
             if (numPlaylists == 1)
-                System.out.println(numPlaylists + " public playlist");
+                System.out.println(numPlaylists + " playlist");
             else
-                System.out.println(numPlaylists + " public playlists");
+                System.out.println(numPlaylists + " playlists");
 
-            System.out.print("\nPress ENTER to return. ");
+            System.out.print("\nPress ENTER to return to Main Menu. ");
             scanner.nextLine();
             return 0;
         } catch (SQLException e) {
@@ -1007,18 +1007,19 @@ public class MainCLI {
                     avgRating = resultSet.getFloat(1);
             } else
                 throw new SQLException("No average rating found");
+            
+            if (numAlbums == 1)
+                System.out.println(numAlbums + " album");
+            else
+                System.out.println(numAlbums + " albums");
 
             if (avgRating < 1)
                 System.out.println("Not rated yet");
             else
                 System.out.println("Average rating: " + Math.round(avgRating * 10) / 10.0 + " out of 10");
             System.out.println("Number of plays: " + numPlays);
-            if (numAlbums == 1)
-                System.out.println("Found in " + numAlbums + " album");
-            else
-                System.out.println("Found in " + numAlbums + " albums");
 
-            System.out.print("\nPress ENTER to return. ");
+            System.out.print("\nPress ENTER to return to Main Menu. ");
             scanner.nextLine();
             return 0;
         } catch (SQLException e) {
