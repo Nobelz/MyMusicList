@@ -33,12 +33,24 @@ CREATE OR ALTER PROCEDURE view_playlists
 	@ID int,
 	@restrict_public char(1) = 'n'
 AS
+BEGIN
 	SELECT playlist.playlist_id, playlist.name, count(song.song_id) AS num_songs, dbo.convert_seconds_to_string(sum(song.duration)) AS total_listening_time
 	FROM playlist 
 		LEFT JOIN song_playlist ON song_playlist.playlist_id = playlist.playlist_id AND song_playlist.user_id = playlist.user_id
 		LEFT JOIN song ON song.song_id = song_playlist.song_id
 	WHERE playlist.user_id = @ID AND playlist.is_public IN (@restrict_public, 'y')
 	GROUP BY playlist.playlist_id, playlist.name;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE view_songs
+    @ID int
+AS
+BEGIN
+    SELECT song_id
+    FROM song_artist
+    WHERE artist_id = @ID;
+END;
 GO
 
 CREATE OR ALTER FUNCTION avg_rating_song(@ID int)
