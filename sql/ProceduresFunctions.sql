@@ -1,3 +1,333 @@
+-- BEGIN USE CASE 1
+/*
+ Searches entire database for a search keyword.
+
+ Parameters:
+    @ID: User ID of user performing the search
+    @query: Search keyword
+    @num: Maximum number of results per type
+    @order_by: Ordering scheme
+        1: Order by relevance (default)
+        2: Order by rating, when applicable
+        3: Order by popularity, when applicable
+    @show_songs: 'y' or 'n', Whether to show songs in result, default is 'y'
+    @show_playlists: 'y' or 'n', Whether to show playlists in result, default is 'y'
+    @show_users: 'y' or 'n', Whether to show users in result, default is 'y'
+    @show_artists: 'y' or 'n', Whether to show artists in result, default is 'y'
+    @show_albums: 'y' or 'n', Whether to show albums in result, default is 'y'
+ Returns: Table consisting of types, ID's, and names of the entries.
+ Uses:
+    Function avg_rating_song
+    Function avg_rating_artist
+    Function avg_rating_album
+    Function num_plays_song
+    Function num_plays_artist
+    Function num_plays_album
+ */
+CREATE OR ALTER PROCEDURE search
+    @ID int, -- User ID of user performing the search
+    @query varchar(1000), -- Search keyword
+    @num int, -- Maximum number of results (per type)
+    @order_by int = 1, -- Ordering scheme (1: Relevance, 2: Rating (when applicable), 3: Popularity (when applicable); Default is Relevance)
+    @show_songs char(1) = 'y', -- Whether to show songs in search result (Default is to show songs)
+    @show_playlists char(1) = 'y', -- Whether to show playlists in search result (Default is to show playlists)
+    @show_users char(1) = 'y', -- Whether to show users in search result (Default is to show users)
+    @show_artists char(1) = 'y', -- Whether to show artists in search result (Default is to show artists)
+    @show_albums char(1) = 'y' -- Whether to show albums in search result (Default is to show artists)
+AS
+BEGIN
+    /*
+     Return table.
+
+     Types:
+        type: Type of search result (e.g. 'song', 'playlist', etc.)
+        id: ID of search result (for playlists, this would be the userID)
+        sec_id: Secondary ID of search result, if applicable (for playlists, this would be the playlistID)
+        name: Name of search result
+     */
+    DECLARE @Result TABLE -- Table that is returned showing search result
+    (
+        type varchar(10),
+        id int,
+        sec_id int,
+        name varchar(100)
+    );
+
+    -- Check to see if songs should be returned in result
+    IF (@show_songs = 'y')
+        BEGIN
+            -- Gets the top n songs based on the order scheme that fit the keyword and inserts into the result table
+            INSERT INTO @Result
+            SELECT TOP(@num) 'song' AS type, song_id AS id, 0 AS sec_id, name
+            FROM song
+            WHERE LOWER(name) LIKE LOWER('%' + @query + '%') -- Check if keyword is in the song name (with case-insensitive too)
+            ORDER BY
+                -- Check which order schema to follow
+                CASE
+                    WHEN @order_by = 2 THEN -- Order by rating (highest average rating at the top)
+                        CASE
+                            WHEN dbo.avg_rating_song(song_id) IS NULL THEN 10
+                            ELSE 10 - dbo.avg_rating_song(song_id)
+                            END
+                    WHEN @order_by = 3 THEN -dbo.num_plays_song(song_id) -- Order by popularity (most num listens at the top)
+                    ELSE -- Order by relevance
+                        CASE
+                            WHEN LOWER(name) LIKE LOWER(@query) THEN 1 -- Highest priority: keyword is exactly the name
+                            WHEN LOWER(name) LIKE LOWER(@query + '%') THEN 2 -- 2nd priority: keyword occurs at very beginning of name
+                            WHEN LOWER(name) LIKE LOWER('%' + @query) THEN 3 -- 3rd priority: keyword occurs at very end of name
+                            ELSE 4 -- 4th priority: keyword occurs in the middle of the name
+                            END
+                    END;
+        END
+
+    -- Check to see if playlists should be returned in result
+    IF (@show_playlists = 'y')
+        BEGIN
+            -- Gets the top n entries of public playlists and the (public and private) playlists of the user and inserts them into result table
+            WITH playlists AS
+                     (SELECT user_id AS id, playlist_id AS sec_id, name
+                      FROM playlist
+                      WHERE (user_id = @ID OR is_public = 'y'))
+            INSERT INTO @Result
+            SELECT TOP(@num) 'playlist' AS type, id, sec_id, name
+            FROM playlists
+            WHERE LOWER(name) LIKE LOWER('%' + @query + '%') -- Check if keyword is in the playlist name
+            ORDER BY
+                CASE -- Order by relevance only
+                    WHEN id = @ID THEN -- User's own playlists are prioritized over other users' playlists
+                        CASE
+                            WHEN LOWER(name) LIKE LOWER(@query) THEN 1.1 -- Highest priority: keyword is exactly the name
+                            WHEN LOWER(name) LIKE LOWER(@query + '%') THEN 1.2 -- 2nd priority: keyword occurs at very beginning of name
+                            WHEN LOWER(name) LIKE LOWER('%' + @query) THEN 1.3 -- 3rd priority: keyword occurs at very end of name
+                            ELSE 1.4 -- 4th priority: keyword occurs in the middle of the name
+                            END
+                    ELSE -- Other user's playlists have lower priority
+                        CASE
+                            WHEN LOWER(name) LIKE LOWER(@query) THEN 2.1
+                            WHEN LOWER(name) LIKE LOWER(@query + '%') THEN 2.2
+                            WHEN LOWER(name) LIKE LOWER('%' + @query) THEN 2.3
+                            ELSE 2.4
+                            END
+                    END;
+        END
+
+    -- Check to see if users should be returned in result
+    IF (@show_users = 'y')
+        BEGIN
+            -- Gets the top n entries of the users whose name and/or username contain the keyword
+            INSERT INTO @Result
+            SELECT TOP(@num) 'user' AS type, user_id AS id, 0 AS sec_id, name
+            FROM music_user
+            WHERE (LOWER(name) LIKE LOWER('%' + @query + '%') OR LOWER(username) LIKE LOWER('%' + @query + '%')) -- Check if keyword is in username or name of user
+            ORDER BY
+                CASE -- Order by relevance only, username is prioritized over name
+                    WHEN @ID = user_id THEN 0.5 -- Highest priority: self
+                    WHEN LOWER(username) LIKE LOWER(@query) THEN 1 -- 2nd priority: keyword is exactly the same as username
+                    WHEN LOWER(name) LIKE LOWER(@query) THEN 2 -- 3rd priority: keyword is exactly the same as name
+                    WHEN LOWER(username) LIKE LOWER(@query + '%') THEN 3 -- 4th priority: keyword occurs at beginning of username
+                    WHEN LOWER(name) LIKE LOWER(@query + '%') THEN 4 -- 5th priority: keyword occurs at beginning of name
+                    WHEN LOWER(username) LIKE LOWER('%' + @query) THEN 5 -- 6th priority: keyword occurs at very end of username
+                    WHEN LOWER(name) LIKE LOWER('%' + @query) THEN 6 -- 7th priority: keyword occurs at very end of name
+                    WHEN LOWER(username) LIKE LOWER('%' + @query + '%') THEN 7 -- 8th priority: keyword occurs in middle of username
+                    ELSE 8 -- 9th priority: keyword occurs in middle of name
+                    END;
+        END
+
+    -- Check to see if artists should be returned in result
+    IF (@show_artists = 'y')
+        BEGIN
+            -- Gets the top n entries of the artists whose name and/or username contain the keyword
+            INSERT INTO @Result
+            SELECT TOP(@num) 'artist' AS type, artist.artist_id AS id, 0 AS sec_id, music_user.name AS name
+            FROM music_user
+                     JOIN artist ON music_user.user_id = artist.artist_id
+            WHERE (LOWER(music_user.name) LIKE LOWER('%' + @query + '%') OR LOWER(music_user.username) LIKE LOWER('%' + @query + '%')) -- Check if keyword is in username or name of artist
+            ORDER BY
+                CASE
+                    WHEN @order_by = 2 THEN -- Order by average rating, descending
+                        CASE
+                            WHEN dbo.avg_rating_artist(artist_id) IS NULL THEN 10 -- If artist has no rating, they are placed at the bottom
+                            ELSE 10 - dbo.avg_rating_artist(artist_id) -- If artists do have ratings, order by descending order
+                            END
+                    WHEN @order_by = 3 THEN -dbo.num_plays_artist(artist_id) -- Order by popularity (number of plays), descending
+                    ELSE -- Order by relevance
+                        CASE
+                            WHEN @ID = artist_id THEN 0.5 -- Highest priority: self
+                            WHEN LOWER(username) LIKE LOWER(@query) THEN 1 -- 2nd priority: keyword is exactly the same as username
+                            WHEN LOWER(name) LIKE LOWER(@query) THEN 2 -- 3rd priority: keyword is exactly the same as name
+                            WHEN LOWER(username) LIKE LOWER(@query + '%') THEN 3 -- 4th priority: keyword occurs at beginning of username
+                            WHEN LOWER(name) LIKE LOWER(@query + '%') THEN 4 -- 5th priority: keyword occurs at beginning of name
+                            WHEN LOWER(username) LIKE LOWER('%' + @query) THEN 5 -- 6th priority: keyword occurs at very end of username
+                            WHEN LOWER(name) LIKE LOWER('%' + @query) THEN 6 -- 7th priority: keyword occurs at very end of name
+                            WHEN LOWER(username) LIKE LOWER('%' + @query + '%') THEN 7 -- 8th priority: keyword occurs in middle of username
+                            ELSE 8
+                            END
+                    END;
+        END
+
+    -- Check to see if albums should be returned in result
+    IF (@show_albums = 'y')
+        BEGIN
+            -- Gets the top n entries of the albums whose name contain the keyword
+            INSERT INTO @Result
+            SELECT TOP(@num) 'album' AS type, album_id AS id, 0 AS sec_id, name
+            FROM album
+            WHERE LOWER(name) LIKE LOWER('%' + @query + '%') -- Check if keyword is in name of album
+            ORDER BY
+                CASE
+                    WHEN @order_by = 2 THEN -- Order by average rating, descending
+                        CASE
+                            WHEN dbo.avg_rating_album(album_id) IS NULL THEN 10
+                            ELSE 10 - dbo.avg_rating_album(album_id)
+                            END
+                    WHEN @order_by = 3 THEN -dbo.num_plays_album(album_id) -- Order by popularity (number of plays), descending
+                    ELSE -- Order by relevance
+                        CASE
+                            WHEN LOWER(name) LIKE LOWER(@query) THEN 1
+                            WHEN LOWER(name) LIKE LOWER(@query + '%') THEN 2
+                            WHEN LOWER(name) LIKE LOWER('%' + @query) THEN 3
+                            ELSE 4
+                            END
+                    END;
+        END
+
+    SELECT * FROM @Result; -- Return all search entries
+END;
+GO
+
+/*
+ Finds the average rating of a particular song.
+
+ Parameters:
+    @ID: The song ID
+ Returns: The average rating of the song, as a float. If the song has no ratings or if the song cannot be found, it
+    returns NULL.
+ */
+CREATE OR ALTER FUNCTION avg_rating_song(@ID int)
+    RETURNS float
+AS
+BEGIN
+    DECLARE @avg_rating float
+    SELECT @avg_rating = avg(rating)
+    FROM rating
+    WHERE rating.song_id = @ID
+    RETURN @avg_rating;
+END
+GO
+
+/*
+ Finds the average rating of a particular artist. This is calculated by taking the average of all of the artists'
+ average song rating.
+
+ Parameters:
+    @ID: The artist ID
+ Returns: The average rating of the artist, as a float. If the artist has no ratings or if the artist cannot be found,
+    it returns NULL.
+ Uses:
+    Function avg_rating_song
+ */
+CREATE OR ALTER FUNCTION avg_rating_artist(@ID int)
+    RETURNS float
+AS
+BEGIN
+    DECLARE @avg_rating float
+    SELECT @avg_rating = avg(dbo.avg_rating_song(song_id))
+    FROM song_artist
+    WHERE artist_id = @ID AND dbo.avg_rating_song(song_id) IS NOT NULL -- Make sure song rating is not NULL
+    RETURN @avg_rating;
+END
+GO
+
+/*
+ Finds the average rating of a particular album. This is calculated by taking the average of all of the song ratings for
+ the album.
+
+ Parameters:
+    @ID: The album ID
+ Returns: The average rating of the album, as a float. If the album has no ratings or if the album cannot be found, it
+    returns NULL.
+ Uses:
+    Function avg_rating_song
+ */
+CREATE OR ALTER FUNCTION avg_rating_album(@ID int)
+    RETURNS float
+AS
+BEGIN
+    DECLARE @avg_rating float
+    SELECT @avg_rating = avg(dbo.avg_rating_song(song_id))
+    FROM song_album
+    WHERE album_id = @ID AND dbo.avg_rating_song(song_id) IS NOT NULL -- Make sure song rating is not NULL
+    RETURN @avg_rating;
+END
+GO
+-- END USE CASE 1
+
+-- BEGIN USE CASE 2
+/*
+ Deletes a user's playlist.
+
+ Parameters:
+    @user_id: User ID of the user
+    @playlist_id: Playlist ID of the playlist
+ */
+CREATE OR ALTER PROCEDURE delete_playlist
+    @user_id int,
+    @playlist_id int
+AS
+BEGIN
+    DELETE FROM playlist
+    WHERE user_id = @user_id AND playlist_id = @playlist_id; -- Checks to make sure user and playlist ID's are the same
+END;
+GO
+
+/*
+ Creates a new playlist.
+
+ Parameters:
+    @user_id: User ID of the user
+    @name: Name of the new playlist
+    @is_public: 'y' or 'n', privacy of the playlist
+ Uses:
+    Function generate_playlist_id
+ */
+CREATE OR ALTER PROCEDURE make_playlist
+    @user_id int,
+    @name varchar(50),
+    @is_public char(1)
+AS
+BEGIN
+    INSERT INTO playlist(user_id, playlist_id, name, is_public)
+    VALUES (@user_id, dbo.generate_playlist_id(@user_id), @name, @is_public);
+END;
+GO
+
+/*
+ Generates a new playlist ID for a newly inserted playlist.
+
+ Parameters:
+    @user_id: User ID of the user who is creating a playlist
+ Returns: Newly-generated playlist ID
+ */
+CREATE OR ALTER FUNCTION generate_playlist_id(@user_id int)
+    RETURNS int
+AS
+BEGIN
+    DECLARE @Result int
+    SELECT @Result = max(playlist_id) + 1 -- Finds the max playlist ID and adds one
+    FROM playlist
+    WHERE user_id = @user_id
+    SELECT @Result =
+           CASE
+               WHEN @Result IS NULL THEN 1 -- If no playlists have been made yet, the default playlist ID is 1
+               ELSE @Result
+               END
+    RETURN @Result;
+END;
+GO
+-- END USE CASE 2
+
+-- BEGIN USE CASE 3
+
 CREATE OR ALTER FUNCTION convert_seconds_to_string(
 	@num_seconds int
 ) RETURNS varchar(8)
@@ -51,42 +381,6 @@ BEGIN
     FROM song_artist
     WHERE artist_id = @ID;
 END;
-GO
-
-CREATE OR ALTER FUNCTION avg_rating_song(@ID int)
-	RETURNS float
-AS
-BEGIN
-	DECLARE @avg_rating float
-	SELECT @avg_rating = avg(rating)
-		FROM rating
-		WHERE rating.song_id = @ID
-	RETURN @avg_rating;
-END
-GO
-
-CREATE OR ALTER FUNCTION avg_rating_album(@ID int)
-	RETURNS float
-AS
-BEGIN
-	DECLARE @avg_rating float
-	SELECT @avg_rating = avg(dbo.avg_rating_song(song_id))
-		FROM song_album
-		WHERE album_id = @ID AND dbo.avg_rating_song(song_id) IS NOT NULL
-	RETURN @avg_rating;
-END
-GO
-
-CREATE OR ALTER FUNCTION avg_rating_artist(@ID int)
-	RETURNS float
-AS
-BEGIN
-	DECLARE @avg_rating float
-	SELECT @avg_rating = avg(dbo.avg_rating_song(song_id))
-		FROM song_artist
-		WHERE artist_id = @ID AND dbo.avg_rating_song(song_id) IS NOT NULL
-	RETURN @avg_rating;
-END
 GO
 
 CREATE OR ALTER FUNCTION num_plays_song(@ID int)
@@ -157,156 +451,6 @@ BEGIN
 		END
 	RETURN @total_plays;
 END
-GO
-
-CREATE OR ALTER PROCEDURE search
-	@ID int,
-	@query varchar(1000),
-	@num int,
-	@order_by int = 1,
-	@show_songs char(1) = 'y',
-	@show_playlists char(1) = 'y',
-	@show_users char(1) = 'y',
-	@show_artists char(1) = 'y',
-	@show_albums char(1) = 'y'
-AS
-BEGIN
-	DECLARE @Result TABLE
-	(
-		type varchar(10),
-		id int,
-		sec_id int,
-		name varchar(100)
-	);
-	
-	IF (@show_songs = 'y')
-	BEGIN
-		INSERT INTO @Result
-		SELECT TOP(@num) 'song' AS type, song_id AS id, 0 AS sec_id, name
-		FROM song
-		WHERE LOWER(name) LIKE LOWER('%' + @query + '%')
-		ORDER BY
-			CASE
-				WHEN @order_by = 2 THEN 
-					CASE
-						WHEN dbo.avg_rating_song(song_id) IS NULL THEN 10
-						ELSE 10 - dbo.avg_rating_song(song_id)
-					END
-				WHEN @order_by = 3 THEN -dbo.num_plays_song(song_id)
-				ELSE
-					CASE
-						WHEN LOWER(name) LIKE LOWER(@query) THEN 1
-    					WHEN LOWER(name) LIKE LOWER(@query + '%') THEN 2
-						WHEN LOWER(name) LIKE LOWER('%' + @query) THEN 3
-						ELSE 4
-					END
-			END;
-	END
-	
-	IF (@show_playlists = 'y')
-	BEGIN
-		WITH playlists AS
-			(SELECT user_id AS id, playlist_id AS sec_id, name 
-			FROM playlist
-			WHERE (user_id = @ID OR is_public = 'y'))
-		INSERT INTO @Result
-		SELECT TOP(@num) 'playlist' AS type, id, sec_id, name
-		FROM playlists
-		WHERE LOWER(name) LIKE LOWER('%' + @query + '%')
-		ORDER BY
-			CASE
-				WHEN id = @ID THEN
-					CASE
-						WHEN LOWER(name) LIKE LOWER(@query) THEN 1.1
-    					WHEN LOWER(name) LIKE LOWER(@query + '%') THEN 1.2
-						WHEN LOWER(name) LIKE LOWER('%' + @query) THEN 1.3
-						ELSE 1.4
-					END
-				ELSE
-					CASE
-						WHEN LOWER(name) LIKE LOWER(@query) THEN 2.1
-    					WHEN LOWER(name) LIKE LOWER(@query + '%') THEN 2.2
-						WHEN LOWER(name) LIKE LOWER('%' + @query) THEN 2.3
-						ELSE 2.4
-					END
-			END;
-	END
-
-	IF (@show_users = 'y')
-	BEGIN
-		INSERT INTO @Result
-		SELECT TOP(@num) 'user' AS type, user_id AS id, 0 AS sec_id, name
-		FROM music_user
-		WHERE (LOWER(name) LIKE LOWER('%' + @query + '%') OR LOWER(username) LIKE LOWER('%' + @query + '%'))
-		ORDER BY
-			CASE
-				WHEN LOWER(username) LIKE LOWER(@query) THEN 1
-				WHEN LOWER(name) LIKE LOWER(@query) THEN 2
-    			WHEN LOWER(username) LIKE LOWER(@query + '%') THEN 3
-				WHEN LOWER(name) LIKE LOWER(@query + '%') THEN 4
-				WHEN LOWER(username) LIKE LOWER('%' + @query) THEN 5
-				WHEN LOWER(name) LIKE LOWER('%' + @query) THEN 6
-				WHEN LOWER(username) LIKE LOWER('%' + @query + '%') THEN 7
-				ELSE 8
-			END;
-	END
-
-	IF (@show_artists = 'y')
-	BEGIN
-		INSERT INTO @Result
-		SELECT TOP(@num) 'artist' AS type, artist.artist_id AS id, 0 AS sec_id, music_user.name AS name
-		FROM music_user
-			JOIN artist ON music_user.user_id = artist.artist_id
-		WHERE (LOWER(music_user.name) LIKE LOWER('%' + @query + '%') OR LOWER(music_user.username) LIKE LOWER('%' + @query + '%'))
-		ORDER BY
-			CASE
-				WHEN @order_by = 2 THEN 
-					CASE
-						WHEN dbo.avg_rating_artist(artist_id) IS NULL THEN 10
-						ELSE 10 - dbo.avg_rating_artist(artist_id)
-					END
-				WHEN @order_by = 3 THEN -dbo.num_plays_artist(artist_id)
-				ELSE
-					CASE
-						WHEN @ID = artist_id THEN 0.5
-						WHEN LOWER(username) LIKE LOWER(@query) THEN 1
-						WHEN LOWER(name) LIKE LOWER(@query) THEN 2
-    					WHEN LOWER(username) LIKE LOWER(@query + '%') THEN 3
-						WHEN LOWER(name) LIKE LOWER(@query + '%') THEN 4
-						WHEN LOWER(username) LIKE LOWER('%' + @query) THEN 5
-						WHEN LOWER(name) LIKE LOWER('%' + @query) THEN 6
-						WHEN LOWER(username) LIKE LOWER('%' + @query + '%') THEN 7
-						ELSE 8
-					END
-			END;
-	END
-
-	IF (@show_albums = 'y')
-	BEGIN
-		INSERT INTO @Result
-		SELECT TOP(@num) 'album' AS type, album_id AS id, 0 AS sec_id, name
-		FROM album
-		WHERE LOWER(name) LIKE LOWER('%' + @query + '%')
-		ORDER BY
-			CASE
-				WHEN @order_by = 2 THEN 
-					CASE
-						WHEN dbo.avg_rating_album(album_id) IS NULL THEN 10
-						ELSE 10 - dbo.avg_rating_album(album_id)
-					END
-				WHEN @order_by = 3 THEN -dbo.num_plays_album(album_id)
-				ELSE
-					CASE
-						WHEN LOWER(name) LIKE LOWER(@query) THEN 1
-    					WHEN LOWER(name) LIKE LOWER(@query + '%') THEN 2
-						WHEN LOWER(name) LIKE LOWER('%' + @query) THEN 3
-						ELSE 4
-					END
-			END;
-	END
-
-	SELECT * FROM @Result;
-END;
 GO
 
 CREATE OR ALTER PROCEDURE add_to_playlist
@@ -551,16 +695,6 @@ BEGIN
 	SELECT artist_id
 	FROM album_artist
 	WHERE album_id = @ID;
-END;
-GO
-
-CREATE OR ALTER PROCEDURE delete_playlist
-    @user_id int,
-    @playlist_id int
-AS
-BEGIN
-    DELETE FROM playlist
-    WHERE user_id = @user_id AND playlist_id = @playlist_id;
 END;
 GO
 
@@ -859,18 +993,6 @@ BEGIN
 END;
 GO
 
-CREATE OR ALTER PROCEDURE make_playlist
-    @user_id int,
-    @playlist_id int,
-    @name varchar(50),
-    @is_public char(1)
-AS
-BEGIN
-    INSERT INTO playlist(user_id, playlist_id, name, is_public)
-    VALUES (@user_id, @playlist_id, @name, @is_public);
-END;
-GO
-
 CREATE OR ALTER PROCEDURE make_album
     @name varchar(50)
 AS
@@ -887,23 +1009,6 @@ AS
 BEGIN
     INSERT INTO song(name, duration)
     VALUES (@name, @duration);
-END;
-GO
-
-CREATE OR ALTER FUNCTION generate_playlist_id(@user_id int)
-RETURNS int
-AS
-BEGIN
-    DECLARE @Result int
-    SELECT @Result = max(playlist_id) + 1
-    FROM playlist
-    WHERE user_id = @user_id
-    SELECT @Result =
-        CASE
-            WHEN @Result IS NULL THEN 1
-            ELSE @Result
-        END
-    RETURN @Result;
 END;
 GO
 
