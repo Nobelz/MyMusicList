@@ -614,9 +614,13 @@ public class MainCLI {
                     clearConsole();
                     System.out.println("Your Favorite Artists:");
                     try {
-                        String sql = "{call fav_artists (" + user.getUserID() + ", 10)}";
-                        CallableStatement callableStatement = connection.prepareCall(sql);
-                        ResultSet resultSet = callableStatement.executeQuery();
+                        String sql = "SELECT dbo.fav_artists(" + user.getUserID() + ", 10)";
+//                        String sql = "{call fav_artists (" + user.getUserID() + ", 10)}";
+//                        CallableStatement callableStatement = connection.prepareCall(sql);
+//                        ResultSet resultSet = callableStatement.executeQuery();
+                        Statement statement = connection.createStatement();
+                        statement.execute(sql);
+                        ResultSet resultSet = statement.getResultSet();
 
                         int i = 0;
                         System.out.printf("    %-30s %-5s\n", "Name", "Listens");
