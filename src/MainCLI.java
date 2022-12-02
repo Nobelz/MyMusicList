@@ -909,6 +909,7 @@ public class MainCLI {
             callableStatement.execute();
 
             System.out.println("Created new playlist. Returning to Playlist Menu.");
+            scanner.nextLine();
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect input entered. Returning to Playlist Menu.");
             scanner = new Scanner(System.in);
@@ -1375,9 +1376,9 @@ public class MainCLI {
             else
                 System.out.println("Found in " + numPlaylists + " playlists");
             if (numAlbums == 1)
-                System.out.println("Found in " + numPlaylists + " album");
+                System.out.println("Found in " + numAlbums + " album");
             else
-                System.out.println("Found in " + numPlaylists + " albums");
+                System.out.println("Found in " + numAlbums + " albums");
 
             System.out.println("1: Add to Playlist");
 
@@ -1409,13 +1410,13 @@ public class MainCLI {
                     addToAlbum(connection, (Artist) user, song);
                 else throw new SQLException("User created a song without being an Artist");
                 return 0;
-            } else if (input == 2) {
+            } else if (input == 2 || (input == 3 && song.isArtist(user))) {
                 logListenScreen(connection, user, song);
                 return 0;
-            } else if (input == 3) {
+            } else if (input == 3 || (input == 4 && song.isArtist(user))) {
                 reviewScreen(connection, user, song);
                 return 0;
-            } else if (input == 4) {
+            } else if (input == 4 || (input == 5 && song.isArtist(user))) {
                 makeRecommendationScreen(connection, user, song);
                 return 0;
             } else
@@ -1820,7 +1821,6 @@ public class MainCLI {
             } catch (InputMismatchException e2) {
                 System.out.println("Incorrect data entered. Returning.");
                 scanner = new Scanner(System.in);
-                e2.printStackTrace(System.err);
             } catch (Exception e2) {
                 System.out.println("Error connecting to SQL database. Returning.");
                 e2.printStackTrace(System.err);
