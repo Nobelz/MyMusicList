@@ -394,6 +394,22 @@ RETURN
 );
 GO
 
+CREATE OR ALTER FUNCTION fav_songs(
+    @ID int,
+    @num_songs int)
+RETURNS TABLE
+AS
+RETURN
+(
+    SELECT TOP (@num_songs) song.song_id, song.name, sum(listens.num_listens) AS total_listens
+    FROM listens
+        JOIN song ON song.song_id = listens.song_id
+    WHERE listens.user_id = @ID
+    GROUP BY song.song_id, song.name
+    ORDER BY total_listens DESC
+);
+GO
+
 CREATE OR ALTER PROCEDURE find_rated_songs
 	@ID int
 AS
