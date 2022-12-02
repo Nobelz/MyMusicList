@@ -253,6 +253,7 @@ public class MainCLI {
                                     songID = 0;
                                 }
                             }
+                            return 1;
                         case 3:
                             int albumID = codes[1];
                             songID = 0;
@@ -267,6 +268,15 @@ public class MainCLI {
                                     songID = 0;
                                 }
                             }
+                            return 1;
+                        case 4:
+                            int searchUserID = codes[1];
+                            viewUser(connection, MMLTools.getUser(connection, searchUserID));
+                            return 1;
+                        case 5:
+                            int artistID = codes[1];
+                            viewArtist(connection, MMLTools.getArtist(connection, artistID));
+                            return 1;
                         default:
                             return 1;
                     }
@@ -914,6 +924,112 @@ public class MainCLI {
     }
 
     /*
+     0: No error
+    -1: Error
+     */
+    private static int viewUser(Connection connection, User user) {
+        clearConsole();
+        System.out.println(user.getName());
+        System.out.println("Username: " + user.getUsername());
+        System.out.println("Joined on " + user.getDate());
+
+        try {
+            String sql = "SELECT dbo.num_playlists(" + user.getUserID() + ")";
+            Statement statement = connection.createStatement();
+            statement.execute(sql);
+            ResultSet resultSet = statement.getResultSet();
+
+            int numPlaylists;
+            if (resultSet.next()) {
+                numPlaylists = resultSet.getInt(1);
+            } else
+                throw new SQLException("No num playlists found");
+
+            if (numPlaylists == 1)
+                System.out.println(numPlaylists + " public playlist");
+            else
+                System.out.println(numPlaylists + " public playlists");
+
+            System.out.print("\nPress ENTER to return. ");
+            scanner.nextLine();
+            return 0;
+        } catch (SQLException e) {
+            System.out.println("Error connecting to SQL database. Returning.");
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+            return -1;
+        }
+    }
+
+    /*
+     0: No error
+    -1: Error
+     */
+    private static int viewArtist(Connection connection, Artist artist) {
+        clearConsole();
+        System.out.println(artist.getName());
+        System.out.println("Username: " + artist.getUsername());
+        System.out.println("Joined on " + artist.getDate());
+
+        try {
+            String sql = "SELECT dbo.num_plays_artist(" + artist.getUserID() + ")";
+            Statement statement = connection.createStatement();
+            statement.execute(sql);
+            ResultSet resultSet = statement.getResultSet();
+
+            int numPlays;
+            if (resultSet.next()) {
+                numPlays = resultSet.getInt(1);
+            } else
+                throw new SQLException("No num plays found");
+
+            sql = "SELECT dbo.num_albums_artist(" + artist.getUserID() + ")";
+            statement = connection.createStatement();
+            statement.execute(sql);
+            resultSet = statement.getResultSet();
+
+            int numAlbums;
+            if (resultSet.next()) {
+                numAlbums = resultSet.getInt(1);
+            } else
+                throw new SQLException("No num albums found");
+
+            sql = "SELECT dbo.avg_rating_artist(" + artist.getUserID() + ")";
+            statement = connection.createStatement();
+            statement.execute(sql);
+            resultSet = statement.getResultSet();
+
+            double avgRating;
+            if (resultSet.next()) {
+                if (resultSet.wasNull())
+                    avgRating = -1;
+                else
+                    avgRating = resultSet.getFloat(1);
+            } else
+                throw new SQLException("No average rating found");
+
+            if (avgRating < 1)
+                System.out.println("Not rated yet");
+            else
+                System.out.println("Average rating: " + Math.round(avgRating * 10) / 10.0 + " out of 10");
+            System.out.println("Number of plays: " + numPlays);
+            if (numAlbums == 1)
+                System.out.println("Found in " + numAlbums + " album");
+            else
+                System.out.println("Found in " + numAlbums + " albums");
+
+            System.out.print("\nPress ENTER to return. ");
+            scanner.nextLine();
+            return 0;
+        } catch (SQLException e) {
+            System.out.println("Error connecting to SQL database. Returning.");
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+            return -3;
+        }
+    }
+
+    /*
     >0: songID
      0: Return with repeat
     -1: Error: repeat
@@ -1116,7 +1232,7 @@ public class MainCLI {
                 }
 
                 for (int i = 0; i < songEntries.length; i++) {
-                    String sql = "{call remove_song (" + songs[songEntries[i]].getSongID() + ")}";
+                    String sql = "{call delete_song (" + songs[songEntries[i]].getSongID() + ")}";
                     CallableStatement callableStatement = connection.prepareCall(sql);
                     callableStatement.execute();
                 }

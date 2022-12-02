@@ -610,20 +610,213 @@ GO
 -- END USE CASE 6
 
 -- BEGIN USE CASE 7
+/*
+ Gets the top 10 highest rated songs.
+ Returns: The Song ID's, names, and average ratings of the top 10 highest rated songs.
+ Uses:
+    Function avg_rating_song
+ */
 CREATE OR ALTER VIEW highest_rated_songs
 AS
     SELECT TOP(10) song_id, name, dbo.avg_rating_song(song_id) AS avg_rating
     FROM song
-    ORDER BY dbo.avg_rating_song(song_id) DESC;
+    ORDER BY dbo.avg_rating_song(song_id) DESC; -- Songs with higher average ratings are returned first
 GO
 
+/*
+ Gets the top 10 most popular songs.
+ Returns: The Song ID's, names, and total listens of the top 10 most popular songs.
+ Uses:
+    Function num_plays_song
+ */
 CREATE OR ALTER VIEW most_popular_songs
 AS
     SELECT TOP(10) song_id, name, dbo.num_plays_song(song_id) AS total_listens
     FROM song
-    ORDER BY dbo.num_plays_song(song_id) DESC;
+    ORDER BY dbo.num_plays_song(song_id) DESC; -- Songs with most listens are returned first
+GO
+
+/*
+ Returns the number of plays a song has.
+
+ Parameters:
+    @ID: The Song ID
+ Returns: The total number plays the song has.
+ */
+CREATE OR ALTER FUNCTION num_plays_song(@ID int)
+    RETURNS int
+AS
+BEGIN
+    DECLARE @total_plays int
+    SELECT @total_plays = sum(num_listens)
+    FROM listens
+    WHERE song_id = @ID
+    SELECT @total_plays =
+           CASE
+               WHEN @total_plays IS NULL THEN 0 -- If there are no plays, there would be no entry in listens, leading to NULL values
+               ELSE @total_plays
+               END
+    RETURN @total_plays;
+END
 GO
 -- END USE CASE 7
+
+-- BEGIN USE CASE 8
+/*
+ Logs listens for a user to a song.
+
+ Parameters:
+    @user_id: The User ID that listened to the song
+    @song_id: The Song ID to log listens to
+    @num_listens: The number of listens to log
+ Uses:
+    Function get_num_listens
+ */
+CREATE OR ALTER PROCEDURE add_listens
+    @user_id int,
+    @song_id int,
+    @num_listens int
+AS
+BEGIN
+    IF dbo.get_num_listens(@user_id, @song_id) = 0
+        BEGIN
+            INSERT INTO listens(user_id, song_id, num_listens)
+            VALUES (@user_id, @song_id, @num_listens);
+        END
+    ELSE
+        BEGIN
+            UPDATE listens
+            SET num_listens = num_listens + @num_listens
+            WHERE user_id = @user_id AND song_id = @song_id;
+        END
+END;
+GO
+
+/*
+ Returns a user's number of listens for a song.
+
+ Parameters:
+    @user_id: The User ID
+    @song_id: The Song ID
+ Returns: The number of listens of the user to the song.
+ */
+CREATE OR ALTER FUNCTION get_num_listens(
+    @user_id int,
+    @song_id int)
+RETURNS int
+AS
+BEGIN
+    DECLARE @num_listens int
+    SELECT @num_listens = num_listens
+    FROM listens
+    WHERE user_id = @user_id AND song_id = @song_id
+    SELECT @num_listens =
+           CASE
+               WHEN @num_listens IS NULL THEN 0 -- If not present in the listens table, this means that the user has not listened to the song yet
+               ELSE @num_listens
+               END
+    RETURN @num_listens;
+END;
+GO
+-- END USE CASE 8
+
+-- BEGIN USE CASE 9
+/*
+ Creates an album.
+
+ Parameters:
+    @name: The name of the album
+ */
+CREATE OR ALTER PROCEDURE make_album
+    @name varchar(50)
+AS
+BEGIN
+    INSERT INTO album(name)
+    VALUES (@name);
+END;
+GO
+
+/*
+ Adds a song to an album.
+
+ Parameters:
+    @song_id: The Song ID of the song to be added
+    @album_id: The Album ID of the album the song will be added to
+ */
+CREATE OR ALTER PROCEDURE add_to_album
+    @song_id int,
+    @album_id int
+AS
+BEGIN
+    INSERT INTO song_album(song_id, album_id)
+    VALUES (@song_id, @album_id);
+END;
+GO
+
+/*
+ Removes a song from an album.
+
+ Parameters:
+    @song_id: The Song ID of the song to be removed
+    @album_id: The Album ID of the album the song will be removed from
+ */
+CREATE OR ALTER PROCEDURE remove_from_album
+    @song_id int,
+    @album_id int
+AS
+BEGIN
+    DELETE FROM song_album
+    WHERE song_id = @song_id AND album_id = @album_id;
+END;
+GO
+
+/*
+ Deletes an album.
+
+ Parameters:
+    @album_id: The Album ID of the album to be deleted
+ */
+CREATE OR ALTER PROCEDURE delete_album
+    @album_id int
+AS
+BEGIN
+    DELETE FROM album
+    WHERE album_id = @album_id;
+END;
+GO
+
+/*
+ Creates a song.
+
+ Parameters:
+    @name: The name of the song
+    @duration: The duration of the song, in number of seconds
+ */
+CREATE OR ALTER PROCEDURE make_song
+    @name varchar(50),
+    @duration int
+AS
+BEGIN
+    INSERT INTO song(name, duration)
+    VALUES (@name, @duration);
+END;
+GO
+
+/*
+ Deletes a song.
+
+ Parameters:
+    @song_id: The Song ID of the song to be deleted
+ */
+CREATE OR ALTER PROCEDURE delete_song
+    @song_id int
+AS
+BEGIN
+    DELETE FROM song
+    WHERE song_id = @song_id;
+END;
+GO
+-- END USE CASE 9
 
 CREATE OR ALTER FUNCTION convert_seconds_to_string(
 	@num_seconds int
@@ -680,23 +873,6 @@ BEGIN
 END;
 GO
 
-CREATE OR ALTER FUNCTION num_plays_song(@ID int)
-	RETURNS int
-AS
-BEGIN
-	DECLARE @total_plays int
-	SELECT @total_plays = sum(num_listens)
-		FROM listens
-		WHERE song_id = @ID
-	SELECT @total_plays = 
-		CASE
-			WHEN @total_plays IS NULL THEN 0
-			ELSE @total_plays
-		END
-	RETURN @total_plays;
-END
-GO
-
 CREATE OR ALTER FUNCTION num_plays_playlist(
 	@user_id int,
 	@playlist_id int)
@@ -750,35 +926,6 @@ BEGIN
 END
 GO
 
-CREATE OR ALTER PROCEDURE add_to_album
-    @song_id int,
-    @album_id int
-AS
-BEGIN
-    INSERT INTO song_album(song_id, album_id)
-    VALUES (@song_id, @album_id);
-END;
-GO
-
-CREATE OR ALTER PROCEDURE remove_from_album
-    @song_id int,
-    @album_id int
-AS
-BEGIN
-    DELETE FROM song_album
-    WHERE song_id = @song_id AND album_id = @album_id;
-END;
-GO
-
-CREATE OR ALTER PROCEDURE remove_song
-    @song_id int
-AS
-BEGIN
-    DELETE FROM song
-    WHERE song_id = @song_id;
-END;
-GO
-
 CREATE OR ALTER PROCEDURE find_rated_songs
 	@ID int
 AS
@@ -798,19 +945,6 @@ BEGIN
 	FROM song
 		JOIN song_genre ON song_genre.song_id = song.song_id
 	WHERE song_genre.genre_name = @genre_name;
-END;
-GO
-
-CREATE OR ALTER PROCEDURE most_played_songs_by_user
-	@ID int,
-	@num_songs int
-AS
-BEGIN
-	SELECT TOP(@num_songs) song.song_id, name, listens.num_listens
-	FROM song
-		JOIN listens ON song.song_id = listens.song_id
-	WHERE listens.user_id = @ID
-	ORDER BY listens.num_listens DESC;
 END;
 GO
 
@@ -903,15 +1037,6 @@ BEGIN
 END;
 GO
 
-CREATE OR ALTER PROCEDURE delete_album
-    @album_id int
-AS
-BEGIN
-    DELETE FROM album
-    WHERE album_id = @album_id;
-END;
-GO
-
 CREATE OR ALTER PROCEDURE toggle_playlist_privacy
     @user_id int,
     @playlist_id int
@@ -924,6 +1049,17 @@ BEGIN
             ELSE 'y'
         END
     WHERE @playlist_id = playlist_id AND @user_id = user_id;
+END;
+GO
+
+CREATE OR ALTER FUNCTION num_playlists_user(@ID int)
+RETURNS int
+AS
+BEGIN
+    RETURN
+        (SELECT count(playlist_id)
+         FROM playlist
+         WHERE user_id = @ID);
 END;
 GO
 
@@ -967,6 +1103,26 @@ BEGIN
 END;
 GO
 
+CREATE OR ALTER FUNCTION num_albums_artist(@ID int)
+    RETURNS int
+AS
+BEGIN
+    DECLARE @num_albums int
+
+    SELECT @num_albums = count(*)
+    FROM album_artist
+    WHERE artist_id = @ID
+
+    SELECT @num_albums =
+           CASE
+               WHEN @num_albums IS NULL THEN 0
+               ELSE @num_albums
+               END
+
+    RETURN @num_albums;
+END;
+GO
+
 CREATE OR ALTER PROCEDURE get_user_by_username
     @username varchar(30)
 AS
@@ -974,45 +1130,6 @@ BEGIN
     SELECT *
     FROM music_user
     WHERE @username = username;
-END;
-GO
-
-CREATE OR ALTER PROCEDURE add_listens
-    @user_id int,
-    @song_id int,
-    @num_listens int
-AS
-BEGIN
-    IF dbo.get_num_listens(@user_id, @song_id) = 0
-    BEGIN
-        INSERT INTO listens(user_id, song_id, num_listens)
-        VALUES (@user_id, @song_id, @num_listens);
-    END
-    ELSE
-    BEGIN
-        UPDATE listens
-        SET num_listens = num_listens + @num_listens
-        WHERE user_id = @user_id AND song_id = @song_id;
-    END
-END;
-GO
-
-CREATE OR ALTER FUNCTION get_num_listens(
-    @user_id int,
-    @song_id int)
-RETURNS int
-AS
-BEGIN
-    DECLARE @num_listens int
-    SELECT @num_listens = num_listens
-    FROM listens
-    WHERE user_id = @user_id AND song_id = @song_id
-    SELECT @num_listens =
-        CASE
-            WHEN @num_listens IS NULL THEN 0
-            ELSE @num_listens
-        END
-    RETURN @num_listens;
 END;
 GO
 
@@ -1080,25 +1197,6 @@ BEGIN
     SELECT name, description
     FROM genre
     WHERE name = @genre_name;
-END;
-GO
-
-CREATE OR ALTER PROCEDURE make_album
-    @name varchar(50)
-AS
-BEGIN
-    INSERT INTO album(name)
-    VALUES (@name);
-END;
-GO
-
-CREATE OR ALTER PROCEDURE make_song
-    @name varchar(50),
-    @duration int
-AS
-BEGIN
-    INSERT INTO song(name, duration)
-    VALUES (@name, @duration);
 END;
 GO
 
