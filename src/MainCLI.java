@@ -813,12 +813,12 @@ public class MainCLI {
             int input = scanner.nextInt();
             scanner.nextLine(); // Read end line character
 
-            if (input < 1 || input > songs.length + 3 || (songs.length > 0 && input > songs.length + 2))
+            if (input < 1 || input > songs.length + 3 || (songs.length == 0 && input > songs.length + 2))
                 throw new InputMismatchException("Incorrect input given");
 
-            if (input == songs.length + 3 || (songs.length > 0 && input == songs.length + 2))
+            if (input == songs.length + 3 || (songs.length == 0 && input == songs.length + 2))
                 return -2;
-            else if (input == songs.length + 2 || (songs.length > 0 && input == songs.length + 1)) {
+            else if (input == songs.length + 2 || (songs.length == 0 && input == songs.length + 1)) {
                 createSongScreen(connection, artist);
                 return 0;
             } else if (input == songs.length + 1) {
@@ -833,7 +833,7 @@ public class MainCLI {
             scanner.nextLine();
             return -1;
         } catch (SQLException e) {
-            System.out.println("Error connecting to SQL database. Returning to Playlist Menu.");
+            System.out.println("Error connecting to SQL database. Returning to Artust Menu.");
             e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
@@ -1697,7 +1697,7 @@ public class MainCLI {
         clearConsole();
         try {
             System.out.println("Create New Song");
-            System.out.print("What is the name of your song?");
+            System.out.print("What is the name of your song? ");
             String name = scanner.nextLine();
 
             System.out.print("Enter the names of the genres for the song, separated by commas, no spaces: ");
