@@ -46,12 +46,12 @@ BEGIN
         name: Name of search result
      */
     DECLARE @Result TABLE -- Table that is returned showing search result
-    (
-        type varchar(10),
-        id int,
-        sec_id int,
-        name varchar(100)
-    );
+                    (
+                        type varchar(10),
+                        id int,
+                        sec_id int,
+                        name varchar(100)
+                    );
 
     -- Check to see if songs should be returned in result
     IF (@show_songs = 'y')
@@ -327,6 +327,146 @@ GO
 -- END USE CASE 2
 
 -- BEGIN USE CASE 3
+/*
+ Adds a song to a playlist.
+
+ Parameters:
+    @song_id: Song ID of song to add
+    @user_id: User ID of the user who is adding the song
+    @playlist_id: Playlist ID of the playlist the song will be added to
+ */
+CREATE OR ALTER PROCEDURE add_to_playlist
+    @song_id int,
+    @user_id int,
+    @playlist_id int
+AS
+BEGIN
+    INSERT INTO song_playlist(song_id, user_id, playlist_id)
+    VALUES (@song_id, @user_id, @playlist_id);
+END;
+GO
+
+/*
+ Removes a song from a playlist.
+
+ Parameters:
+    @song_id: Song ID of song to remove
+    @user_id: User ID of the user who is removing the song
+    @playlist_id: Playlist ID of the playlist the song will be removed from
+ */
+CREATE OR ALTER PROCEDURE remove_from_playlist
+    @song_id int,
+    @user_id int,
+    @playlist_id int
+AS
+BEGIN
+    DELETE FROM song_playlist
+    WHERE song_id = @song_id AND user_id = @user_id AND playlist_id = @playlist_id;
+END;
+GO
+-- END USE CASE 3
+
+-- BEGIN USE CASE 4
+/*
+ Gets all song recommendations made by other users.
+
+ Parameters:
+    @ID: The User ID of the user who is viewing song recommendations
+ Returns: Table consisting of all recommended song ID's, song names, and ID's of the user who recommended the song.
+ */
+CREATE OR ALTER PROCEDURE view_user_recommendations
+    @ID int
+AS
+BEGIN
+    SELECT song.song_id, song.name, recommendation.from_id
+    FROM recommendation
+             JOIN song ON song.song_id = recommendation.song_id
+    WHERE to_id = @ID;
+END;
+GO
+
+/*
+ Gets automatically-generated song recommendations.
+
+ Parameters:
+    @ID: The User ID of the user who is viewing song recommendations
+    @num_recommendations: The max number of song recommendations per recommendation type
+ Returns: Table consisting of the recommendation type (artist or genre), song ID's and names.
+ */
+CREATE OR ALTER PROCEDURE view_auto_recommendations
+    @ID int,
+    @num_recommendations int
+AS
+BEGIN
+    /*
+     Return table.
+
+     Types:
+        type: Type of song recommendation (e.g. 'artist' or 'genre')
+        id: ID of song
+        name: Name of song
+     */
+    DECLARE @Result TABLE
+                    (
+                        type varchar(10),
+                        song_id int,
+                        name varchar(100)
+                    );
+
+    -- Gets all artist song recommendations
+    WITH temp_artist AS
+             (
+                 SELECT DISTINCT 'artist' AS type, song.song_id, song.name
+                 FROM dbo.fav_artists(@ID, 10) AS temp
+                          JOIN song_artist ON song_artist.artist_id = temp.artist_id
+                          JOIN song ON song_artist.song_id = song.song_id
+                          LEFT JOIN listens ON listens.song_id = song.song_id
+                 WHERE listens.user_id IS NULL AND song.song_id NOT IN
+                                                   (SELECT song_id FROM @Result) -- Checks to make sure the user hasn't already listened to the song
+             )
+    INSERT INTO @Result
+    SELECT TOP(@num_recommendations) * FROM temp_artist -- Return n artist recommendations at most
+    ORDER BY NEWID(); -- Randomize song recommendations
+
+    -- Gets all genre song recommendations
+    WITH temp_genre AS
+             (
+                 SELECT DISTINCT 'genre' AS type, song.song_id, song.name
+                 FROM dbo.fav_genres(@ID, 3) AS temp
+                          JOIN song_genre ON song_genre.genre_name = temp.genre_name
+                          JOIN song ON song_genre.song_id = song.song_id
+                          LEFT JOIN listens ON listens.song_id = song.song_id
+                 WHERE listens.user_id IS NULL AND song.song_id NOT IN
+                                                   (SELECT song_id FROM @Result) -- Checks to make sure the user hasn't already listened to the song, in addition to making sure that the recommendation hasn't already been recommended in temp_artist
+             )
+    INSERT INTO @Result
+    SELECT TOP(@num_recommendations) * FROM temp_genre -- Return n genre recommendations at most
+    ORDER BY NEWID(); -- Randomize song recommendations
+
+    SELECT * FROM @Result; -- Return auto-generated recommendations
+END;
+GO
+
+/*
+ Makes a song recommendation to another user
+
+ Parameters:
+    @from_id: The User ID of the user making the song recommendation
+    @to_id: The User ID of the user receiving the song recommendation
+    @song_id: The Song ID of the song recommended
+ */
+CREATE OR ALTER PROCEDURE make_recommendation
+    @from_id int,
+    @to_id int,
+    @song_id int
+AS
+BEGIN
+    INSERT INTO recommendation(from_id, to_id, song_id)
+    VALUES (@from_id, @to_id, @song_id);
+END;
+GO
+-- END USE CASE 4
+
 
 CREATE OR ALTER FUNCTION convert_seconds_to_string(
 	@num_seconds int
@@ -453,17 +593,6 @@ BEGIN
 END
 GO
 
-CREATE OR ALTER PROCEDURE add_to_playlist
-	@song_id int,
-	@user_id int,
-	@playlist_id int
-AS
-BEGIN
-	INSERT INTO song_playlist(song_id, user_id, playlist_id)
-	VALUES (@song_id, @user_id, @playlist_id);
-END;
-GO
-
 CREATE OR ALTER PROCEDURE add_to_album
     @song_id int,
     @album_id int
@@ -471,18 +600,6 @@ AS
 BEGIN
     INSERT INTO song_album(song_id, album_id)
     VALUES (@song_id, @album_id);
-END;
-GO
-
-
-CREATE OR ALTER PROCEDURE remove_from_playlist
-	@song_id int,
-	@user_id int,
-	@playlist_id int
-AS
-BEGIN
-	DELETE FROM song_playlist
-		WHERE song_id = @song_id AND user_id = @user_id AND playlist_id = @playlist_id;
 END;
 GO
 
@@ -762,68 +879,6 @@ BEGIN
 END;
 GO
 
-CREATE OR ALTER PROCEDURE view_user_recommendations
-    @ID int
-AS
-BEGIN
-    SELECT song.song_id, song.name, recommendation.from_id
-    FROM recommendation
-             JOIN song ON song.song_id = recommendation.song_id
-    WHERE to_id = @ID;
-END;
-GO
-
-CREATE OR ALTER PROCEDURE view_auto_recommendations
-    @ID int,
-    @num_recommendations int
-AS
-BEGIN
-    DECLARE @Result TABLE
-    (
-        type varchar(10),
-        song_id int,
-        name varchar(100)
-    );
-
-    CREATE TABLE #temp_artist
-    (
-        artist_id int,
-        name varchar(50),
-        total_listens int
-    );
-
-    WITH temp_artist AS
-        (
-            SELECT DISTINCT 'artist' AS type, song.song_id, song.name
-            FROM dbo.fav_artists(@ID, 10) AS temp
-                JOIN song_artist ON song_artist.artist_id = temp.artist_id
-                JOIN song ON song_artist.song_id = song.song_id
-                LEFT JOIN listens ON listens.song_id = song.song_id
-            WHERE listens.user_id IS NULL AND song.song_id NOT IN
-                (SELECT song_id FROM @Result)
-        )
-    INSERT INTO @Result
-    SELECT TOP(@num_recommendations) * FROM temp_artist
-    ORDER BY NEWID();
-
-    WITH temp_genre AS
-        (
-            SELECT DISTINCT 'genre' AS type, song.song_id, song.name
-            FROM dbo.fav_genres(@ID, 3) AS temp
-                JOIN song_genre ON song_genre.genre_name = temp.genre_name
-                JOIN song ON song_genre.song_id = song.song_id
-                LEFT JOIN listens ON listens.song_id = song.song_id
-            WHERE listens.user_id IS NULL AND song.song_id NOT IN
-                (SELECT song_id FROM @Result)
-        )
-    INSERT INTO @Result
-    SELECT TOP(@num_recommendations) * FROM temp_genre
-    ORDER BY NEWID();
-
-    SELECT * FROM @Result;
-END;
-GO
-
 CREATE OR ALTER PROCEDURE get_user_by_username
     @username varchar(30)
 AS
@@ -831,17 +886,6 @@ BEGIN
     SELECT *
     FROM music_user
     WHERE @username = username;
-END;
-GO
-
-CREATE OR ALTER PROCEDURE make_recommendation
-    @from_id int,
-    @to_id int,
-    @song_id int
-AS
-BEGIN
-    INSERT INTO recommendation(from_id, to_id, song_id)
-    VALUES (@from_id, @to_id, @song_id);
 END;
 GO
 

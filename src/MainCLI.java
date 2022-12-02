@@ -892,16 +892,6 @@ public class MainCLI {
             if (privacy.length() != 1 || (privacy.charAt(0) != 'y' && privacy.charAt(0) != 'n'))
                 throw new InputMismatchException("Incorrect input");
 
-            // TODO tag for deletion
-//            String sql = "SELECT dbo.generate_playlist_id(" + user.getUserID() + ")";
-//            Statement statement = connection.createStatement();
-//            statement.execute(sql);
-//            ResultSet resultSet = statement.getResultSet();
-//
-//            if (!resultSet.next())
-//                throw new SQLException("Playlist ID could not be generated");
-//          int playlistID = resultSet.getInt(1);
-
             String sql = "{call make_playlist (" + user.getUserID() + ", ?, ?)}";
             CallableStatement callableStatement = connection.prepareCall(sql);
             callableStatement.setString(1, name);
