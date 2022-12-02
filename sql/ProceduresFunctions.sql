@@ -956,3 +956,12 @@ BEGIN
     WHERE user_id = @user_id;
 END;
 GO
+
+CREATE OR ALTER PROCEDURE create_artist
+    @user_id int
+AS
+BEGIN
+    INSERT INTO artist(artist_id)
+    VALUES (@user_id);
+END;
+GO

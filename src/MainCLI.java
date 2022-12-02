@@ -206,13 +206,14 @@ public class MainCLI {
                 System.out.println("7: Logout");
                 System.out.println("8: Exit Program");
             } else {
-                System.out.println("6: Logout");
-                System.out.println("7: Exit Program");
+                System.out.println("6: Create Artist Account");
+                System.out.println("7: Logout");
+                System.out.println("8: Exit Program");
             }
 
             int input = scanner.nextInt();
             scanner.nextLine(); // Read end line character
-            if (input < 1 || input > 8 || (!isArtist && input > 7))
+            if (input < 1 || input > 8)
                 throw new InputMismatchException("Incorrect input given");
             clearConsole();
 
@@ -287,13 +288,18 @@ public class MainCLI {
                             return 0;
 
                         return 1;
-                    } else
+                    } else {
+                        sql = "{call create_artist (" + user.getUserID() + ")}";
+                        callableStatement = connection.prepareCall(sql);
+                        callableStatement.execute();
+
+                        System.out.println("Account designated as artist account. Returning to Login Menu.");
+                        scanner.nextLine();
+
                         return 0;
+                    }
                 case 7:
-                    if (isArtist)
-                        return 0;
-                    else
-                        System.exit(0);
+                    return 0;
                 default:
                     System.exit(0);
             }
