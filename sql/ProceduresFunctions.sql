@@ -531,6 +531,100 @@ END;
 GO
 -- END USE CASE 5
 
+-- BEGIN USE CASE 6
+/*
+ Returns the favorite genres of a user.
+
+ Parameters:
+    @ID: The User ID
+    @num_genres: The maximum number of genres to be returned
+ Returns: Table showing the genre names and total listens of the top genres.
+ */
+CREATE OR ALTER FUNCTION fav_genres(
+    @ID int,
+    @num_genres int)
+RETURNS TABLE
+AS
+    RETURN
+        (
+            -- Returns top n favorite genres
+            SELECT TOP (@num_genres) song_genre.genre_name, sum(listens.num_listens) AS total_listens -- Totals all listens of the genre
+            FROM listens
+                     JOIN song_genre ON listens.song_id = song_genre.song_id
+            WHERE listens.user_id = @ID -- Restricts the number of listens to the user itself
+            GROUP BY song_genre.genre_name
+            ORDER BY total_listens DESC -- Genres with most listens are returned first
+        );
+GO
+
+/*
+ Returns the favorite artists of a user.
+
+ Parameters:
+    @ID: The User ID
+    @num_artists: The maximum number of artists to be returned
+ Returns: Table showing the artist names and total listens of the top artists.
+ */
+CREATE OR ALTER FUNCTION fav_artists(
+    @ID int,
+    @num_artists int)
+RETURNS TABLE
+AS
+    RETURN
+        (
+            -- Returns top n favorite artists
+            SELECT TOP (@num_artists) song_artist.artist_id, music_user.name, sum(listens.num_listens) AS total_listens -- Totals all listens of the artist
+            FROM listens
+                     JOIN song_artist ON listens.song_id = song_artist.song_id
+                     JOIN music_user ON music_user.user_id = song_artist.artist_id
+            WHERE listens.user_id = @ID -- Restricts the number of listens to the user itself
+            GROUP BY song_artist.artist_id, music_user.name
+            ORDER BY total_listens DESC -- Artists with most listens are returned first
+        );
+GO
+
+/*
+ Returns the favorite songs of a user.
+
+ Parameters:
+    @ID: The User ID
+    @num_songs: The maximum number of songs to be returned
+ Returns: Table showing the song names and total listens of the top songs.
+ */
+CREATE OR ALTER FUNCTION fav_songs(
+    @ID int,
+    @num_songs int)
+RETURNS TABLE
+AS
+    RETURN
+        (
+            -- Returns top n favorite songs
+            SELECT TOP (@num_songs) song.song_id, song.name, sum(listens.num_listens) AS total_listens -- Totals all listens of the song
+            FROM listens
+                     JOIN song ON song.song_id = listens.song_id
+            WHERE listens.user_id = @ID -- Restricts the number of listens to the user itself
+            GROUP BY song.song_id, song.name
+            ORDER BY total_listens DESC -- Songs with most listens are returned first
+        );
+GO
+-- END USE CASE 6
+
+-- BEGIN USE CASE 7
+CREATE OR ALTER VIEW highest_rated_songs
+AS
+    SELECT TOP(10) song_id, name, dbo.avg_rating_song(song_id) AS avg_rating
+    FROM song
+    ORDER BY dbo.avg_rating_song(song_id) DESC;
+GO
+
+CREATE OR ALTER VIEW most_popular_songs
+AS
+    SELECT TOP(10) song_id, name, dbo.num_plays_song(song_id) AS total_listens
+    FROM song
+    ORDER BY dbo.num_plays_song(song_id) DESC;
+GO
+-- END USE CASE 7
+
 CREATE OR ALTER FUNCTION convert_seconds_to_string(
 	@num_seconds int
 ) RETURNS varchar(8)
@@ -685,55 +779,6 @@ BEGIN
 END;
 GO
 
-CREATE OR ALTER FUNCTION fav_genres
-	(@ID int,
-	@num_genres int)
-RETURNS TABLE
-AS
-RETURN
-(
-	SELECT TOP (@num_genres) song_genre.genre_name, sum(listens.num_listens) AS total_listens
-	FROM listens
-		JOIN song_genre ON listens.song_id = song_genre.song_id
-	WHERE listens.user_id = @ID
-	GROUP BY song_genre.genre_name
-	ORDER BY total_listens DESC
-);
-GO
-
-CREATE OR ALTER FUNCTION fav_artists
-	(@ID int,
-	@num_artists int)
-RETURNS TABLE
-AS
-RETURN
-(
-	SELECT TOP (@num_artists) song_artist.artist_id, music_user.name, sum(listens.num_listens) AS total_listens
-	FROM listens
-		JOIN song_artist ON listens.song_id = song_artist.song_id
-		JOIN music_user ON music_user.user_id = song_artist.artist_id
-	WHERE listens.user_id = @ID
-	GROUP BY song_artist.artist_id, music_user.name
-	ORDER BY total_listens DESC
-);
-GO
-
-CREATE OR ALTER FUNCTION fav_songs(
-    @ID int,
-    @num_songs int)
-RETURNS TABLE
-AS
-RETURN
-(
-    SELECT TOP (@num_songs) song.song_id, song.name, sum(listens.num_listens) AS total_listens
-    FROM listens
-        JOIN song ON song.song_id = listens.song_id
-    WHERE listens.user_id = @ID
-    GROUP BY song.song_id, song.name
-    ORDER BY total_listens DESC
-);
-GO
-
 CREATE OR ALTER PROCEDURE find_rated_songs
 	@ID int
 AS
@@ -742,26 +787,6 @@ BEGIN
 	FROM rating
 		JOIN song ON song.song_id = rating.song_id
 	WHERE rating.user_id = @ID;
-END;
-GO
-
-CREATE OR ALTER PROCEDURE highest_rated_songs
-	@num_songs int = 10
-AS
-BEGIN
-	SELECT TOP(@num_songs) song_id, name, dbo.avg_rating_song(song_id) AS avg_rating
-	FROM song
-	ORDER BY dbo.avg_rating_song(song_id) DESC;
-END;
-GO
-
-CREATE OR ALTER PROCEDURE most_popular_songs
-	@num_songs int = 10
-AS
-BEGIN
-	SELECT TOP(@num_songs) song_id, name, dbo.num_plays_song(song_id) AS total_listens
-	FROM song
-	ORDER BY dbo.num_plays_song(song_id) DESC;
 END;
 GO
 

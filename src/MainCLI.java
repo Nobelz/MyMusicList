@@ -717,9 +717,10 @@ public class MainCLI {
                     clearConsole();
                     System.out.println("Most Popular Songs:");
                     try {
-                        String sql = "{call most_popular_songs (10)}";
-                        CallableStatement callableStatement = connection.prepareCall(sql);
-                        ResultSet resultSet = callableStatement.executeQuery();
+                        String sql = "SELECT * FROM most_popular_songs";
+                        Statement statement = connection.createStatement();
+                        statement.execute(sql);
+                        ResultSet resultSet = statement.getResultSet();
 
                         int i = 0;
                         System.out.printf("    %-50s %-5s\n", "Name", "Total Listens");
@@ -752,9 +753,10 @@ public class MainCLI {
                     clearConsole();
                     System.out.println("Highest Rated Songs:");
                     try {
-                        String sql = "{call highest_rated_songs (10)}";
-                        CallableStatement callableStatement = connection.prepareCall(sql);
-                        ResultSet resultSet = callableStatement.executeQuery();
+                        String sql = "SELECT * FROM highest_rated_songs";
+                        Statement statement = connection.createStatement();
+                        statement.execute(sql);
+                        ResultSet resultSet = statement.getResultSet();
 
                         int i = 0;
                         System.out.printf("    %-50s %-5s\n", "Name", "Average Rating");
