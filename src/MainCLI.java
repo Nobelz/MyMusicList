@@ -188,15 +188,6 @@ public class MainCLI {
         return user;
     }
 
-    /* TODO Codes:
-        -1: Return to Main Menu, Error occurred
-        0: No error, Return to Main menu
-        1: Song (song_id)
-        2: Playlist (user_id, playlist_id)
-        3: Album (album_id)
-        4: User (user_id)
-        5: Artist (artist_id)
-     */
     private static int mainMenu(Connection connection, User user) {
         try {
             String name = user.getName();
@@ -308,6 +299,11 @@ public class MainCLI {
 
                     return 1;
                 case 4:
+                    code = 0;
+                    while (code == 0 || code == -1) {
+                        code = queryMenu(connection, user);
+                    }
+
                     return 1;
                 case 5:
                     System.out.print("Are you sure you want to delete your account? All songs, albums, playlists, " +
@@ -595,13 +591,213 @@ public class MainCLI {
     }
 
     private static int queryMenu(Connection connection, User user) {
-        // TODO implement
-        throw new UnsupportedOperationException("Not implemented yet");
-    }
+        clearConsole();
+        System.out.println("Other Queries");
+        System.out.println("1: View Your Favorite Artists");
+        System.out.println("2: View Your Favorite Genres");
+        System.out.println("3: View Your Favorite Songs");
+        System.out.println("4: Find Most Popular Songs");
+        System.out.println("5: Find Highest Rated Songs");
+        System.out.println("6: Return to Main Menu");
+        System.out.println();
 
-    private static int profileSettings(Connection connection, User user) {
-        // TODO implement
-        throw new UnsupportedOperationException("Not implemented yet");
+        try {
+            System.out.print("Select an Entry: ");
+            int input = scanner.nextInt();
+            scanner.nextLine(); // Read end line character
+
+            if (input < 1 || input > 6)
+                throw new InputMismatchException("Incorrect input given");
+
+            switch (input) {
+                case 1:
+                    clearConsole();
+                    System.out.println("Your Favorite Artists:");
+                    try {
+                        String sql = "{call fav_artists (" + user.getUserID() + ", 10)}";
+                        CallableStatement callableStatement = connection.prepareCall(sql);
+                        ResultSet resultSet = callableStatement.executeQuery();
+
+                        int i = 0;
+                        System.out.printf("    %-30s %-5s\n", "Name", "Listens");
+                        while (resultSet.next()) {
+                            if (i < 9)
+                                System.out.printf((i + 1) + ":  %-30s %-5s\n", resultSet.getString("name"),
+                                        resultSet.getInt("total_listens"));
+                            else
+                                System.out.printf((i + 1) + ": %-30s %-5s\n", resultSet.getString("name"),
+                                        resultSet.getInt("total_listens"));
+                            i++;
+                        }
+                        if (i == 0)
+                            System.out.println("No listens recorded yet.");
+
+                        scanner.nextLine();
+                    } catch (NumberFormatException | InputMismatchException e) {
+                        System.out.println("Incorrect menu output. Returning to Query Menu.");
+                        scanner = new Scanner(System.in);
+                        e.printStackTrace(System.err);
+                        scanner.nextLine();
+                    } catch (SQLException e) {
+                        System.out.println("Error connecting to SQL database. Returning to Query Menu.");
+                        e.printStackTrace(System.err);
+                        scanner.nextLine();
+                    }
+                    return 0;
+                case 2:
+                    clearConsole();
+                    System.out.println("Your Favorite Genres:");
+                    try {
+                        String sql = "{call fav_genres (" + user.getUserID() + ", 10)}";
+                        CallableStatement callableStatement = connection.prepareCall(sql);
+                        ResultSet resultSet = callableStatement.executeQuery();
+
+                        int i = 0;
+                        System.out.printf("    %-30s %-5s\n", "Name", "Listens");
+                        while (resultSet.next()) {
+                            if (i < 9)
+                                System.out.printf((i + 1) + ":  %-30s %-5s\n",
+                                        resultSet.getString("genre_name"),
+                                        resultSet.getInt("total_listens"));
+                            else
+                                System.out.printf((i + 1) + ": %-30s %-5s\n",
+                                        resultSet.getString("genre_name"),
+                                        resultSet.getInt("total_listens"));
+                            i++;
+                        }
+                        if (i == 0)
+                            System.out.println("No listens recorded yet.");
+
+                        scanner.nextLine();
+                    } catch (NumberFormatException | InputMismatchException e) {
+                        System.out.println("Incorrect menu output. Returning to Query Menu.");
+                        scanner = new Scanner(System.in);
+                        e.printStackTrace(System.err);
+                        scanner.nextLine();
+                    } catch (SQLException e) {
+                        System.out.println("Error connecting to SQL database. Returning to Query Menu.");
+                        e.printStackTrace(System.err);
+                        scanner.nextLine();
+                    }
+                    return 0;
+                case 3:
+                    clearConsole();
+                    System.out.println("Your Favorite Songs:");
+                    try {
+                        String sql = "{call fav_songs (" + user.getUserID() + ", 10)}";
+                        CallableStatement callableStatement = connection.prepareCall(sql);
+                        ResultSet resultSet = callableStatement.executeQuery();
+
+                        int i = 0;
+                        System.out.printf("    %-30s %-5s\n", "Name", "Listens");
+                        while (resultSet.next()) {
+                            if (i < 9)
+                                System.out.printf((i + 1) + ":  %-30s %-5s\n",
+                                        resultSet.getString("name"),
+                                        resultSet.getInt("total_listens"));
+                            else
+                                System.out.printf((i + 1) + ": %-30s %-5s\n",
+                                        resultSet.getString("name"),
+                                        resultSet.getInt("total_listens"));
+                            i++;
+                        }
+                        if (i == 0)
+                            System.out.println("No listens recorded yet.");
+
+                        scanner.nextLine();
+                    } catch (NumberFormatException | InputMismatchException e) {
+                        System.out.println("Incorrect menu output. Returning to Query Menu.");
+                        scanner = new Scanner(System.in);
+                        e.printStackTrace(System.err);
+                        scanner.nextLine();
+                    } catch (SQLException e) {
+                        System.out.println("Error connecting to SQL database. Returning to Query Menu.");
+                        e.printStackTrace(System.err);
+                        scanner.nextLine();
+                    }
+                    return 0;
+                case 4:
+                    clearConsole();
+                    System.out.println("Most Popular Songs:");
+                    try {
+                        String sql = "{call most_popular_songs (" + user.getUserID() + ", 10)}";
+                        CallableStatement callableStatement = connection.prepareCall(sql);
+                        ResultSet resultSet = callableStatement.executeQuery();
+
+                        int i = 0;
+                        System.out.printf("    %-30s %-5s\n", "Name", "Total Listens");
+                        while (resultSet.next()) {
+                            if (i < 9)
+                                System.out.printf((i + 1) + ":  %-30s %-5s\n",
+                                        resultSet.getString("name"),
+                                        resultSet.getInt("total_listens"));
+                            else
+                                System.out.printf((i + 1) + ": %-30s %-5s\n",
+                                        resultSet.getString("name"),
+                                        resultSet.getInt("total_listens"));
+                            i++;
+                        }
+                        if (i == 0)
+                            System.out.println("No listens recorded yet.");
+
+                        scanner.nextLine();
+                    } catch (NumberFormatException | InputMismatchException e) {
+                        System.out.println("Incorrect menu output. Returning to Query Menu.");
+                        scanner = new Scanner(System.in);
+                        e.printStackTrace(System.err);
+                        scanner.nextLine();
+                    } catch (SQLException e) {
+                        System.out.println("Error connecting to SQL database. Returning to Query Menu.");
+                        e.printStackTrace(System.err);
+                        scanner.nextLine();
+                    }
+                    return 0;
+                case 5:
+                    clearConsole();
+                    System.out.println("Highest Rated Songs:");
+                    try {
+                        String sql = "{call highest_rated_songs (" + user.getUserID() + ", 10)}";
+                        CallableStatement callableStatement = connection.prepareCall(sql);
+                        ResultSet resultSet = callableStatement.executeQuery();
+
+                        int i = 0;
+                        System.out.printf("    %-30s %-5s\n", "Name", "Average Rating");
+                        while (resultSet.next()) {
+                            if (i < 9)
+                                System.out.printf((i + 1) + ":  %-30s %-5s\n",
+                                        resultSet.getString("name"),
+                                        Math.round(10 * resultSet.getFloat("avg_rating")) / 10.0);
+                            else
+                                System.out.printf((i + 1) + ": %-30s %-5s\n",
+                                        resultSet.getString("name"),
+                                        Math.round(10 * resultSet.getFloat("avg_rating")) / 10.0);
+                            i++;
+                        }
+                        if (i == 0)
+                            System.out.println("No listens recorded yet.");
+
+                        scanner.nextLine();
+                    } catch (NumberFormatException | InputMismatchException e) {
+                        System.out.println("Incorrect menu output. Returning to Query Menu.");
+                        scanner = new Scanner(System.in);
+                        e.printStackTrace(System.err);
+                        scanner.nextLine();
+                    } catch (SQLException e) {
+                        System.out.println("Error connecting to SQL database. Returning to Query Menu.");
+                        e.printStackTrace(System.err);
+                        scanner.nextLine();
+                    }
+                    return 0;
+                default:
+                    return -2;
+            }
+        } catch (NumberFormatException | InputMismatchException e) {
+            System.out.println("Incorrect input given. Please try again.");
+            scanner = new Scanner(System.in);
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+            return -1;
+        }
     }
 
     private static int artistMenu(Connection connection, Artist artist) {
