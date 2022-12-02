@@ -188,6 +188,15 @@ public class MainCLI {
         return user;
     }
 
+    /* TODO Codes:
+        -1: Return to Main Menu, Error occurred
+        0: No error, Return to Main menu
+        1: Song (song_id)
+        2: Playlist (user_id, playlist_id)
+        3: Album (album_id)
+        4: User (user_id)
+        5: Artist (artist_id)
+     */
     private static int mainMenu(Connection connection, User user) {
         try {
             String name = user.getName();
@@ -221,10 +230,54 @@ public class MainCLI {
                 case 1:
                     int[] codes = searchScreen(connection, user);
                     int referralCode = codes[0];
-                    //int ID = codes[1];
+                    if (referralCode <= 0)
+                        return 1;
 
-                    // TODO implement search functionality (song, playlist, album, artist, user)
-                    return 1;
+                    if (codes.length < 2)
+                        return 1;
+
+                    switch (codes[0]) {
+                        case 1:
+                            int songID = codes[1];
+                            int code = 0;
+                            while (code == 0 || code == -1) {
+                                code = viewSong(connection, user, MMLTools.getSong(connection, songID));
+                            }
+                            return 1;
+                        case 2:
+                            int userID = codes[1];
+                            int playlistID = codes[2];
+
+                            songID = 0;
+                            while (songID == 0 || songID == -1) {
+                                songID = viewPlaylist(connection, user, MMLTools.getPlaylist(connection, userID,
+                                        playlistID, false));
+
+                                if (songID > 0) {
+                                    code = 0;
+                                    while (code == 0 || code == -1) {
+                                        code = viewSong(connection, user, MMLTools.getSong(connection, songID));
+                                    }
+                                    songID = 0;
+                                }
+                            }
+                        case 3:
+                            int albumID = codes[1];
+                            songID = 0;
+                            while (songID == 0 || songID == -1) {
+                                songID = viewAlbum(connection, user, MMLTools.getAlbum(connection, albumID, false));
+
+                                if (songID > 0) {
+                                    code = 0;
+                                    while (code == 0 || code == -1) {
+                                        code = viewSong(connection, user, MMLTools.getSong(connection, songID));
+                                    }
+                                    songID = 0;
+                                }
+                            }
+                        default:
+                            return 1;
+                    }
                 case 2:
                     int playlistID = 0;
                     while (playlistID == 0 || playlistID == -1) {
