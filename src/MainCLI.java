@@ -23,9 +23,7 @@ public class MainCLI {
                 new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
             else
                 Runtime.getRuntime().exec("clear");
-        } catch (Exception e) {
-            e.printStackTrace(System.err);
-        }
+        } catch (Exception ignored) {}
     }
 
     public static void main(String[] args) {
@@ -40,7 +38,6 @@ public class MainCLI {
             loginMenu(connection);
         } catch (SQLException e) {
             System.out.println("Failed to connect to database. Exiting...");
-            e.printStackTrace(System.err);
         }
         scanner.close();
     }
@@ -84,12 +81,10 @@ public class MainCLI {
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect data entered. Please try Again.");
             scanner = new Scanner(System.in);
-            e.printStackTrace(System.err);
             scanner.nextLine();
             loginMenu(connection);
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Exiting.");
-            e.printStackTrace(System.err);
             System.exit(-1);
         }
     }
@@ -120,7 +115,6 @@ public class MainCLI {
             throw new Exception("Username incorrect or not found.");
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Login Menu.");
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return -1;
         } catch (Exception e) {
@@ -165,13 +159,11 @@ public class MainCLI {
                     throw new Exception("Other SQL Exception");
             } catch (Exception ex) {
                 System.out.println("Error connecting to SQL database. Returning to Login Menu.");
-                e.printStackTrace(System.err);
                 scanner.nextLine();
                 return -1;
             }
         } catch (Exception e) {
             System.out.println("Error connecting to SQL database. Returning to Login Menu.");
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return -1;
         }
@@ -356,12 +348,10 @@ public class MainCLI {
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect menu output. Please try again");
             scanner = new Scanner(System.in);
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return 1;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Login Menu.");
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return -1;
         }
@@ -454,12 +444,10 @@ public class MainCLI {
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect input given. Returning to Main Menu.");
             scanner = new Scanner(System.in);
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return new int[] {-1};
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Main Menu.");
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return new int[] {-1};
         }
@@ -514,13 +502,11 @@ public class MainCLI {
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect input given. Please try again.");
             scanner = new Scanner(System.in);
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return -1;
         } catch (SQLException e) {
 
             System.out.println("Error connecting to SQL database. Returning to Main Menu.");
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
         }
@@ -579,12 +565,10 @@ public class MainCLI {
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect input given. Please try again.");
             scanner = new Scanner(System.in);
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return -1;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Main Menu.");
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
         }
@@ -637,11 +621,9 @@ public class MainCLI {
                     } catch (NumberFormatException | InputMismatchException e) {
                         System.out.println("Incorrect menu output. Returning to Query Menu.");
                         scanner = new Scanner(System.in);
-                        e.printStackTrace(System.err);
                         scanner.nextLine();
                     } catch (SQLException e) {
                         System.out.println("Error connecting to SQL database. Returning to Query Menu.");
-                        e.printStackTrace(System.err);
                         scanner.nextLine();
                     }
                     return 0;
@@ -674,11 +656,9 @@ public class MainCLI {
                     } catch (NumberFormatException | InputMismatchException e) {
                         System.out.println("Incorrect menu output. Returning to Query Menu.");
                         scanner = new Scanner(System.in);
-                        e.printStackTrace(System.err);
                         scanner.nextLine();
                     } catch (SQLException e) {
                         System.out.println("Error connecting to SQL database. Returning to Query Menu.");
-                        e.printStackTrace(System.err);
                         scanner.nextLine();
                     }
                     return 0;
@@ -711,11 +691,9 @@ public class MainCLI {
                     } catch (NumberFormatException | InputMismatchException e) {
                         System.out.println("Incorrect menu output. Returning to Query Menu.");
                         scanner = new Scanner(System.in);
-                        e.printStackTrace(System.err);
                         scanner.nextLine();
                     } catch (SQLException e) {
                         System.out.println("Error connecting to SQL database. Returning to Query Menu.");
-                        e.printStackTrace(System.err);
                         scanner.nextLine();
                     }
                     return 0;
@@ -748,11 +726,9 @@ public class MainCLI {
                     } catch (NumberFormatException | InputMismatchException e) {
                         System.out.println("Incorrect menu output. Returning to Query Menu.");
                         scanner = new Scanner(System.in);
-                        e.printStackTrace(System.err);
                         scanner.nextLine();
                     } catch (SQLException e) {
                         System.out.println("Error connecting to SQL database. Returning to Query Menu.");
-                        e.printStackTrace(System.err);
                         scanner.nextLine();
                     }
                     return 0;
@@ -785,11 +761,9 @@ public class MainCLI {
                     } catch (NumberFormatException | InputMismatchException e) {
                         System.out.println("Incorrect menu output. Returning to Query Menu.");
                         scanner = new Scanner(System.in);
-                        e.printStackTrace(System.err);
                         scanner.nextLine();
                     } catch (SQLException e) {
                         System.out.println("Error connecting to SQL database. Returning to Query Menu.");
-                        e.printStackTrace(System.err);
                         scanner.nextLine();
                     }
                     return 0;
@@ -799,7 +773,6 @@ public class MainCLI {
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect input given. Please try again.");
             scanner = new Scanner(System.in);
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return -1;
         }
@@ -881,12 +854,10 @@ public class MainCLI {
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect input given. Please try again.");
             scanner = new Scanner(System.in);
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return -1;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Main Menu.");
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
         }
@@ -923,11 +894,9 @@ public class MainCLI {
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect input entered. Returning to Playlist Menu.");
             scanner = new Scanner(System.in);
-            e.printStackTrace(System.err);
             scanner.nextLine();
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Playlist Menu.");
-            e.printStackTrace(System.err);
             scanner.nextLine();
         }
     }
@@ -1063,12 +1032,10 @@ public class MainCLI {
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect menu output. Please try again.");
             scanner = new Scanner(System.in);
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return -1;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Playlist Menu.");
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
         }
@@ -1150,12 +1117,10 @@ public class MainCLI {
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect menu output. Please try again.");
             scanner = new Scanner(System.in);
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return -1;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Song Menu.");
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
         }
@@ -1302,12 +1267,10 @@ public class MainCLI {
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect menu output. Please try again.");
             scanner = new Scanner(System.in);
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return -1;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning.");
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
         }
@@ -1438,12 +1401,10 @@ public class MainCLI {
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect menu output. Please try again.");
             scanner = new Scanner(System.in);
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return -1;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning.");
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
         }
@@ -1490,7 +1451,6 @@ public class MainCLI {
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect input given. Returning.");
             scanner = new Scanner(System.in);
-            e.printStackTrace(System.err);
             scanner.nextLine();
         } catch (SQLException e) {
             try {
@@ -1502,7 +1462,6 @@ public class MainCLI {
                     throw new Exception("Other SQL Exception");
             } catch (Exception ex) {
                 System.out.println("Error connecting to SQL database. Returning.");
-                e.printStackTrace(System.err);
                 scanner.nextLine();
             }
         }
@@ -1549,7 +1508,6 @@ public class MainCLI {
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect input given. Returning.");
             scanner = new Scanner(System.in);
-            e.printStackTrace(System.err);
             scanner.nextLine();
         } catch (SQLException e) {
             try {
@@ -1561,7 +1519,6 @@ public class MainCLI {
                     throw new Exception("Other SQL Exception");
             } catch (Exception ex) {
                 System.out.println("Error connecting to SQL database. Returning.");
-                e.printStackTrace(System.err);
                 scanner.nextLine();
             }
         }
@@ -1610,12 +1567,10 @@ public class MainCLI {
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect input given. Please try again.");
             scanner = new Scanner(System.in);
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return -1;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Main Menu.");
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
         }
@@ -1683,12 +1638,10 @@ public class MainCLI {
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect input given. Please try again.");
             scanner = new Scanner(System.in);
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return -1;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Main Menu.");
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
         }
@@ -1704,7 +1657,6 @@ public class MainCLI {
             toUser = MMLTools.getUser(connection, username);
         } catch(SQLException e) {
             System.out.println("Username not found. Returning.");
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return;
         }
@@ -1720,7 +1672,6 @@ public class MainCLI {
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect data entered. Returning.");
             scanner = new Scanner(System.in);
-            e.printStackTrace(System.err);
             scanner.nextLine();
         } catch (SQLException e) {
             try {
@@ -1732,7 +1683,6 @@ public class MainCLI {
                     throw new Exception("Other SQL Exception");
             } catch (Exception ex) {
                 System.out.println("Error connecting to SQL database. Returning.");
-                e.printStackTrace(System.err);
                 scanner.nextLine();
             }
         }
@@ -1771,11 +1721,9 @@ public class MainCLI {
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect data entered. Returning to Recommendation Menu.");
             scanner = new Scanner(System.in);
-            e.printStackTrace(System.err);
             scanner.nextLine();
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Recommendation Menu.");
-            e.printStackTrace(System.err);
             scanner.nextLine();
         }
     }
@@ -1816,7 +1764,6 @@ public class MainCLI {
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect data entered. Returning.");
             scanner = new Scanner(System.in);
-            e.printStackTrace(System.err);
             scanner.nextLine();
         } catch (SQLException e1) {
             try {
@@ -1902,12 +1849,10 @@ public class MainCLI {
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect input given. Please try again.");
             scanner = new Scanner(System.in);
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return -1;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Album Menu.");
-            e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
         }
@@ -2000,7 +1945,6 @@ public class MainCLI {
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect input entered. Returning to Album Menu.");
             scanner = new Scanner(System.in);
-            e.printStackTrace(System.err);
             scanner.nextLine();
         } catch (SQLException e) {
             try {
@@ -2009,7 +1953,6 @@ public class MainCLI {
                 statement.execute(sql);
             } catch (SQLException ignored) {}     
             System.out.println("Error connecting to SQL database. Returning to Album Menu.");
-            e.printStackTrace(System.err);
             scanner.nextLine();
         }
     }
@@ -2108,7 +2051,6 @@ public class MainCLI {
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect input entered. Returning to Song Menu.");
             scanner = new Scanner(System.in);
-            e.printStackTrace(System.err);
             scanner.nextLine();
         } catch (SQLException e) {
             try {
@@ -2117,7 +2059,6 @@ public class MainCLI {
                 statement.execute(sql);
             } catch (SQLException ignored) {}
             System.out.println("Error connecting to SQL database. Returning to Song Menu.");
-            e.printStackTrace(System.err);
             scanner.nextLine();
         }
     }
