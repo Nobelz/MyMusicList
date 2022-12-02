@@ -518,13 +518,13 @@ BEGIN
     IF @review = ''
         BEGIN
             UPDATE rating
-            SET rating = @rating, review = NULL -- Sets review to NULL
+            SET rating = @rating, review = NULL, timestamp = CURRENT_TIMESTAMP -- Sets review to NULL and updates timestamp
             WHERE user_id = @user_id AND song_id = @song_id;
         END
     ELSE
         BEGIN
             UPDATE rating
-            SET rating = @rating, review = @review
+            SET rating = @rating, review = @review, timestamp = CURRENT_TIMESTAMP -- Updates timestamp too
             WHERE user_id = @user_id AND song_id = @song_id; -- Updates both rating and review
         END
 END;
