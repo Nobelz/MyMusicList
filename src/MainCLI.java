@@ -116,6 +116,9 @@ public class MainCLI {
 
             if (resultSet.next()) {
                 int userID = resultSet.getInt(1);
+                if (userID == 0)
+                    throw new InputMismatchException("Username incorrect or not found.");
+
                 return userID;
             }
 
