@@ -34,8 +34,10 @@ public class MainCLI {
             scanner.nextLine();
             clearConsole();
 
-            // TODO Change to Return Codes
-            loginMenu(connection);
+            int code = 0;
+            while (code == 0 || code == -1) {
+                code = loginMenu(connection);
+            }
         } catch (SQLException e) {
             System.out.println("Failed to connect to database. Exiting...");
             e.printStackTrace(System.err);
@@ -44,7 +46,7 @@ public class MainCLI {
         scanner.close();
     }
 
-    private static void loginMenu(Connection connection) {
+    private static int loginMenu(Connection connection) {
         // Main Menu Screen
         clearConsole();
         System.out.println("MyMusicList Login Menu");
@@ -80,16 +82,17 @@ public class MainCLI {
                 connection.close();
                 System.exit(0); // Exits program
             }
-            loginMenu(connection);
+            return 0;
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect data entered. Please try Again.");
             scanner = new Scanner(System.in);
             scanner.nextLine();
-            loginMenu(connection);
+            return -1;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Exiting.");
             e.printStackTrace(System.err);
             System.exit(-1);
+            return -1;
         }
     }
 
@@ -432,7 +435,7 @@ public class MainCLI {
 
         System.out.println();
         System.out.println((results.length + 1) + ": Search for Something Else");
-        System.out.println((results.length + 2) + ": Return to Main Menu");
+        System.out.println((results.length + 2) + ": Return");
         try {
             System.out.print("Select an Entry: ");
             int input = scanner.nextInt();
@@ -506,7 +509,7 @@ public class MainCLI {
             scanner.nextLine();
             return -1;
         } catch (SQLException e) {
-            System.out.println("Error connecting to SQL database. Returning to Main Menu.");
+            System.out.println("Error connecting to SQL database. Returning.");
             e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
@@ -1101,14 +1104,14 @@ public class MainCLI {
                 System.out.println((playlist.getNumSongs() + 1) + ": Remove Songs");
                 System.out.println((playlist.getNumSongs() + 2) + ": Toggle Playlist Privacy");
                 System.out.println((playlist.getNumSongs() + 3) + ": Delete Playlist");
-                System.out.println((playlist.getNumSongs() + 4) + ": Return to Playlist Menu");
+                System.out.println((playlist.getNumSongs() + 4) + ": Return");
             } else {
                 System.out.println((playlist.getNumSongs() + 1) + ": Toggle Playlist Privacy");
                 System.out.println((playlist.getNumSongs() + 2) + ": Delete Playlist");
-                System.out.println((playlist.getNumSongs() + 3) + ": Return to Playlist Menu");
+                System.out.println((playlist.getNumSongs() + 3) + ": Return");
             }
         } else
-            System.out.println((playlist.getNumSongs() + 1) + ": Return to Playlist Menu");
+            System.out.println((playlist.getNumSongs() + 1) + ": Return");
 
         System.out.print("Select an Entry: ");
         try {
@@ -1203,7 +1206,7 @@ public class MainCLI {
             scanner.nextLine();
             return -1;
         } catch (SQLException e) {
-            System.out.println("Error connecting to SQL database. Returning to Playlist Menu.");
+            System.out.println("Error connecting to SQL database. Returning.");
             e.printStackTrace(System.err);
             scanner.nextLine();
             return -3;
@@ -1370,10 +1373,10 @@ public class MainCLI {
                     System.out.println((album.getNumSongs() + 3) + ": Return to Album Menu");
                 } else {
                     System.out.println((album.getNumSongs() + 1) + ": Delete Album");
-                    System.out.println((album.getNumSongs() + 2) + ": Return to Album Menu");
+                    System.out.println((album.getNumSongs() + 2) + ": Return");
                 }
             } else
-                System.out.println((album.getNumSongs() + 1) + ": Return to Album Menu");
+                System.out.println((album.getNumSongs() + 1) + ": Return");
 
             System.out.print("Select an Entry: ");
             int input = scanner.nextInt();
