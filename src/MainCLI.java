@@ -122,7 +122,7 @@ public class MainCLI {
             throw new InputMismatchException("Username incorrect or not found.");
         } catch (InputMismatchException e) {
             System.out.println("Username was incorrect or not found. Returning to Login Menu.");
-            e.printStackTrace(System.err);
+            scanner = new Scanner(System.in);
             scanner.nextLine();
             return -1;
         }catch (SQLException e) {
