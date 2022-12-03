@@ -69,7 +69,7 @@ public class MainCLI {
                     User user = authenticateUser(connection, userID);
                     while (mainMenu(connection, user) == 1);
                 } else
-                    throw new InputMismatchException("Incorrect username");
+                    return -1;
             } else if (input == 2) {
                 int userID = registerScreen(connection);
 
@@ -77,14 +77,14 @@ public class MainCLI {
                     User user = authenticateUser(connection, userID);
                     while (mainMenu(connection, user) == 1);
                 } else
-                    throw new InputMismatchException("Incorrect registration details");
+                    return -1;
             } else {
                 connection.close();
                 System.exit(0); // Exits program
             }
             return 0;
         } catch (NumberFormatException | InputMismatchException e) {
-            System.out.println("Incorrect data entered. Please try Again.");
+            System.out.println("Username incorrect or not found. Please try again or register.");
             scanner = new Scanner(System.in);
             scanner.nextLine();
             return -1;
