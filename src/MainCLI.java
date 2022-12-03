@@ -112,24 +112,24 @@ public class MainCLI {
             ResultSet resultSet = preparedStatement.getResultSet();
 
             if (resultSet.wasNull())
-                throw new Exception("Username incorrect or not found.");
+                throw new InputMismatchException("Username incorrect or not found.");
 
             if (resultSet.next()) {
                 int userID = resultSet.getInt(1);
                 return userID;
             }
 
-            throw new Exception("Username incorrect or not found.");
-        } catch (SQLException e) {
+            throw new InputMismatchException("Username incorrect or not found.");
+        } catch (InputMismatchException e) {
+            System.out.println("Username was incorrect or not found. Returning to Login Menu.");
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+            return -1;
+        }catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Login Menu.");
             e.printStackTrace(System.err);
             scanner.nextLine();
             return -1;
-        } catch (Exception e) {
-            System.out.println("Username was incorrect or not found. Returning to Login Menu.");
-            e.printStackTrace(System.err);
-            scanner.nextLine();
-            return 0;
         }
     }
 
@@ -163,7 +163,7 @@ public class MainCLI {
                 if (sqlState == 23000) { // Integrity constraint violation
                     System.out.println("Username already exists. Either login or try a different username. Returning to Login Menu.");
                     scanner.nextLine();
-                    return 0;
+                    return -1;
                 } else
                     throw new Exception("Other SQL Exception");
             } catch (Exception ex) {
