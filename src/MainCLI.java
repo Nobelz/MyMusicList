@@ -220,66 +220,11 @@ public class MainCLI {
 
             switch (input) {
                 case 1:
-                    int[] codes = searchScreen(connection, user);
-                    int referralCode = codes[0];
-                    if (referralCode <= 0)
-                        return 1;
-
-                    if (codes.length < 2)
-                        return 1;
-
-                    switch (codes[0]) {
-                        case 1:
-                            int songID = codes[1];
-                            int code = 0;
-                            while (code == 0 || code == -1) {
-                                code = viewSong(connection, user, MMLTools.getSong(connection, songID));
-                            }
-                            return 1;
-                        case 2:
-                            int userID = codes[1];
-                            int playlistID = codes[2];
-
-                            songID = 0;
-                            while (songID == 0 || songID == -1) {
-                                songID = viewPlaylist(connection, user, MMLTools.getPlaylist(connection, userID,
-                                        playlistID, false));
-
-                                if (songID > 0) {
-                                    code = 0;
-                                    while (code == 0 || code == -1) {
-                                        code = viewSong(connection, user, MMLTools.getSong(connection, songID));
-                                    }
-                                    songID = 0;
-                                }
-                            }
-                            return 1;
-                        case 3:
-                            int albumID = codes[1];
-                            songID = 0;
-                            while (songID == 0 || songID == -1) {
-                                songID = viewAlbum(connection, user, MMLTools.getAlbum(connection, albumID, false));
-
-                                if (songID > 0) {
-                                    code = 0;
-                                    while (code == 0 || code == -1) {
-                                        code = viewSong(connection, user, MMLTools.getSong(connection, songID));
-                                    }
-                                    songID = 0;
-                                }
-                            }
-                            return 1;
-                        case 4:
-                            int searchUserID = codes[1];
-                            viewUser(connection, MMLTools.getUser(connection, searchUserID));
-                            return 1;
-                        case 5:
-                            int artistID = codes[1];
-                            viewArtist(connection, MMLTools.getArtist(connection, artistID));
-                            return 1;
-                        default:
-                            return 1;
+                    int code = 0;
+                    while (code == 0 || code == -1) {
+                        code = searchScreen(connection, user);
                     }
+                    return 1;
                 case 2:
                     int playlistID = 0;
                     while (playlistID == 0 || playlistID == -1) {
@@ -291,7 +236,7 @@ public class MainCLI {
                                         playlistID, true));
 
                                 if (songID > 0) {
-                                    int code = 0;
+                                    code = 0;
                                     while (code == 0 || code == -1) {
                                         code = viewSong(connection, user, MMLTools.getSong(connection, songID));
                                     }
@@ -303,7 +248,7 @@ public class MainCLI {
                     }
                     return 1;
                 case 3:
-                    int code = 0;
+                    code = 0;
                     while (code == 0 || code == -1) {
                         code = recommendationMenu(connection, user);
                     }
@@ -386,7 +331,7 @@ public class MainCLI {
         4: User (user_id)
         5: Artist (artist_id)
      */
-    private static int[] searchScreen(Connection connection, User user) {
+    private static int searchScreen(Connection connection, User user) {
         clearConsole();
         System.out.println("Search MyMusicList Database");
         System.out.print("Please enter search keyword: ");
@@ -429,48 +374,142 @@ public class MainCLI {
             }
 
             if (i == 0) {
-                System.out.println("No results found for that query. Returning to Main Menu.");
-                scanner.nextLine();
-                return new int[] {0};
+                System.out.println("No results found for that query.");
+                System.out.print("Try again: 'y' or 'n': ");
+                String line = scanner.nextLine();
+
+                if (line.length() != 1 || (line.charAt(0) != 'y' && line.charAt(0) != 'n'))
+                    throw new InputMismatchException("Incorrect input");
+
+                if (line.charAt(0) == 'y')
+                    return 0;
+                else
+                    return -2;
             }
 
             SearchResult[] resultsArray = new SearchResult[i];
             results.toArray(resultsArray);
 
-            clearConsole();
-            System.out.println("Results:");
-            System.out.printf("    %-10s %-50s\n", "Type", "Name");
-            for (i = 0; i < resultsArray.length; i++) {
-                if (i < 9)
-                    System.out.printf((i + 1) + ":  %-10s %-50s\n", resultsArray[i].getType(), resultsArray[i].getName());
-                else
-                    System.out.printf((i + 1) + ": %-10s %-50s\n", resultsArray[i].getType(), resultsArray[i].getName());
+            int code = 0;
+            while (code == 0 || code == -1) {
+                code = viewSearch(connection, user, resultsArray);
             }
-            System.out.println((i + 1) + ": Return to Main Menu");
-            System.out.print("Select an Entry: ");
-            int input = scanner.nextInt();
-            scanner.nextLine();
 
-            if (input < 1 || input > (i + 1))
-                throw new InputMismatchException("Incorrect input given");
-
-            if (input == i + 1)
-                return new int[] {0};
-            else if (resultsArray[input - 1].getType().equals(SearchResult.Entity.PLAYLIST))
-                return new int[] {2, resultsArray[input - 1].getID(), resultsArray[input - 1].getSecID()};
+            if (code == 1)
+                return -2;
             else
-                return new int[] {resultsArray[input - 1].getType().getIntValue(), resultsArray[input - 1].getID()};
-
+                return 0;
         } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect input given. Returning to Main Menu.");
             scanner = new Scanner(System.in);
             scanner.nextLine();
-            return new int[] {-1};
+            return -3;
         } catch (SQLException e) {
             System.out.println("Error connecting to SQL database. Returning to Main Menu.");
             e.printStackTrace(System.err);
             scanner.nextLine();
-            return new int[] {-1};
+            return -3;
+        }
+    }
+
+    /*
+     * -3: Error, no repeat
+     * -2: No error, no repeat
+     * -1: Error, repeat
+     * 0: No error, repeat
+     * 1: Go to Main Menu
+     */
+    private static int viewSearch(Connection connection, User user, SearchResult[] results) {
+        clearConsole();
+        System.out.println("Results:");
+        System.out.printf("    %-10s %-50s\n", "Type", "Name");
+        for (int i = 0; i < results.length; i++) {
+            if (i < 9)
+                System.out.printf((i + 1) + ":  %-10s %-50s\n", results[i].getType(), results[i].getName());
+            else
+                System.out.printf((i + 1) + ": %-10s %-50s\n", results[i].getType(), results[i].getName());
+        }
+
+        System.out.println();
+        System.out.println((results.length + 1) + ": Search for Something Else");
+        System.out.println((results.length + 2) + ": Return to Main Menu");
+        try {
+            System.out.print("Select an Entry: ");
+            int input = scanner.nextInt();
+            scanner.nextLine();
+
+            if (input < 1 || input > (results.length + 2))
+                throw new InputMismatchException("Incorrect input given");
+
+            if (input == results.length + 2) {
+                return 1;
+            } else if (input == results.length + 1) {
+                return -2;
+            }
+
+            SearchResult result = results[input - 1];
+            switch (result.getType()) {
+                case SONG:
+                    int songID = result.getID();
+                    int code = 0;
+                    while (code == 0 || code == -1) {
+                        code = viewSong(connection, user, MMLTools.getSong(connection, songID));
+                    }
+                    return 0;
+                case PLAYLIST:
+                    int userID = result.getID();
+                    int playlistID = result.getSecID();
+
+                    songID = 0;
+                    while (songID == 0 || songID == -1) {
+                        songID = viewPlaylist(connection, user, MMLTools.getPlaylist(connection, userID,
+                                playlistID, false));
+
+                        if (songID > 0) {
+                            code = 0;
+                            while (code == 0 || code == -1) {
+                                code = viewSong(connection, user, MMLTools.getSong(connection, songID));
+                            }
+                            songID = 0;
+                        }
+                    }
+                    return 0;
+                case ALBUM:
+                    int albumID = result.getID();
+                    songID = 0;
+                    while (songID == 0 || songID == -1) {
+                        songID = viewAlbum(connection, user, MMLTools.getAlbum(connection, albumID, false));
+
+                        if (songID > 0) {
+                            code = 0;
+                            while (code == 0 || code == -1) {
+                                code = viewSong(connection, user, MMLTools.getSong(connection, songID));
+                            }
+                            songID = 0;
+                        }
+                    }
+                    return 0;
+                case USER:
+                    userID = result.getID();
+                    viewUser(connection, MMLTools.getUser(connection, userID));
+                    return 0;
+                case ARTIST:
+                    int artistID = result.getID();
+                    viewArtist(connection, MMLTools.getArtist(connection, artistID));
+                    return 0;
+                default:
+                    return 1;
+            }
+        } catch (NumberFormatException | InputMismatchException e) {
+            System.out.println("Incorrect input given. Please try again.");
+            scanner = new Scanner(System.in);
+            scanner.nextLine();
+            return -1;
+        } catch (SQLException e) {
+            System.out.println("Error connecting to SQL database. Returning to Main Menu.");
+            e.printStackTrace(System.err);
+            scanner.nextLine();
+            return -3;
         }
     }
 
