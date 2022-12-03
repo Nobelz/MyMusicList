@@ -324,7 +324,7 @@ public class MainCLI {
             }
             return 1;
         } catch (NumberFormatException | InputMismatchException e) {
-            System.out.println("Incorrect menu output. Please try again");
+            System.out.println("Incorrect menu output. Please try again.");
             scanner = new Scanner(System.in);
             scanner.nextLine();
             return 1;
@@ -336,15 +336,6 @@ public class MainCLI {
         }
     }
 
-    /* TODO Codes:
-        -1: Return to Main Menu, Error occurred
-        0: No error, Return to Main menu
-        1: Song (song_id)
-        2: Playlist (user_id, playlist_id)
-        3: Album (album_id)
-        4: User (user_id)
-        5: Artist (artist_id)
-     */
     private static int searchScreen(Connection connection, User user) {
         clearConsole();
         System.out.println("Search MyMusicList Database");

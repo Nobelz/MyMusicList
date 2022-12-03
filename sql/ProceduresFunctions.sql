@@ -818,6 +818,80 @@ END;
 GO
 -- END USE CASE 9
 
+-- BEGIN USE CASE 10
+/*
+ Gets the number of playlists of the user.
+
+ Parameters:
+    @ID: The User ID
+ Returns: the number of playlists the user has
+ */
+CREATE OR ALTER FUNCTION num_playlists_user(@ID int)
+    RETURNS int
+AS
+BEGIN
+    RETURN
+        (SELECT count(playlist_id)
+         FROM playlist
+         WHERE user_id = @ID);
+END;
+GO
+
+/*
+ Gets the number of plays of the artist.
+
+ Parameters:
+    @ID: The Artist ID
+ Returns: The number of plays the artist has
+ */
+CREATE OR ALTER FUNCTION num_plays_artist(@ID int)
+    RETURNS int
+AS
+BEGIN
+    DECLARE @total_plays int
+    SELECT @total_plays = sum(dbo.num_plays_song(song_id))
+    FROM song_artist
+    WHERE artist_id = @ID
+    SELECT @total_plays =
+           CASE
+               WHEN @total_plays IS NULL THEN 0
+               ELSE @total_plays
+               END
+    RETURN @total_plays;
+END
+GO
+
+/*
+ Gets the number of albums of the artist.
+
+ Parameters:
+    @ID: The Artist ID
+ Returns: The number of albums the artist has
+ */
+CREATE OR ALTER FUNCTION num_albums_artist(@ID int)
+    RETURNS int
+AS
+BEGIN
+    DECLARE @num_albums int
+
+    SELECT @num_albums = count(*)
+    FROM album_artist
+    WHERE artist_id = @ID
+
+    SELECT @num_albums =
+           CASE
+               WHEN @num_albums IS NULL THEN 0
+               ELSE @num_albums
+               END
+
+    RETURN @num_albums;
+END;
+GO
+-- END USE CASE 10
+
+-- OTHER QUERIES USED IN COMMAND LINE
+
+-- Converts number of seconds into a readable String
 CREATE OR ALTER FUNCTION convert_seconds_to_string(
 	@num_seconds int
 ) RETURNS varchar(8)
@@ -849,6 +923,7 @@ BEGIN
 END;
 GO
 
+-- Gets all visible playlists of a user
 CREATE OR ALTER PROCEDURE view_playlists 
 	@ID int,
 	@restrict_public char(1) = 'n'
@@ -863,6 +938,7 @@ BEGIN
 END;
 GO
 
+-- Gets all of the songs of an artist
 CREATE OR ALTER PROCEDURE view_songs
     @ID int
 AS
@@ -873,6 +949,7 @@ BEGIN
 END;
 GO
 
+-- Gets all the number of plays of a playlist
 CREATE OR ALTER FUNCTION num_plays_playlist(
 	@user_id int,
 	@playlist_id int)
@@ -892,6 +969,7 @@ BEGIN
 END
 GO
 
+-- Gets all the number of plays for an album
 CREATE OR ALTER FUNCTION num_plays_album(@ID int)
 	RETURNS int
 AS
@@ -909,23 +987,7 @@ BEGIN
 END
 GO
 
-CREATE OR ALTER FUNCTION num_plays_artist(@ID int)
-	RETURNS int
-AS
-BEGIN
-	DECLARE @total_plays int
-	SELECT @total_plays = sum(dbo.num_plays_song(song_id))
-		FROM song_artist
-		WHERE artist_id = @ID
-	SELECT @total_plays = 
-		CASE
-			WHEN @total_plays IS NULL THEN 0
-			ELSE @total_plays
-		END
-	RETURN @total_plays;
-END
-GO
-
+-- Finds all song ratings for a certain song
 CREATE OR ALTER PROCEDURE find_rated_songs
 	@ID int
 AS
@@ -937,6 +999,7 @@ BEGIN
 END;
 GO
 
+-- Finds artists by genre
 CREATE OR ALTER PROCEDURE find_artists_by_genre
 	@genre_name varchar(25)
 AS
@@ -948,6 +1011,7 @@ BEGIN
 END;
 GO
 
+-- Login with username
 CREATE OR ALTER FUNCTION login_with_username(@username varchar(200))
 RETURNS int
 AS
@@ -960,6 +1024,7 @@ BEGIN
 END;
 GO
 
+-- Finds all songs by playlist
 CREATE OR ALTER PROCEDURE get_songs_by_playlist
 	@user_id int,
 	@playlist_id int
@@ -971,6 +1036,7 @@ BEGIN
 END;
 GO
 
+-- Returns all user attributes by user ID
 CREATE OR ALTER PROCEDURE get_user_by_id
 	@user_id int
 AS
@@ -981,6 +1047,7 @@ BEGIN
 END;
 GO
 
+-- Returns all artist attributes by artist ID
 CREATE OR ALTER PROCEDURE get_artist_by_id
     @artist_id int
 AS
@@ -992,6 +1059,7 @@ BEGIN
 END;
 GO
 
+-- Returns all artist attributes by playlist ID
 CREATE OR ALTER PROCEDURE get_playlist_by_id
 	@user_id int,
 	@playlist_id int
@@ -1006,7 +1074,7 @@ BEGIN
 END;
 GO
 
-
+-- Returns all song attributes by song ID
 CREATE OR ALTER PROCEDURE get_song_by_id
 	@ID int
 AS
@@ -1017,6 +1085,7 @@ BEGIN
 END;
 GO
 
+-- Gets all the artists of a song
 CREATE OR ALTER PROCEDURE get_artists_by_song
 	@ID int
 AS
@@ -1027,6 +1096,7 @@ BEGIN
 END;
 GO
 
+-- Gets all the artists of an album
 CREATE OR ALTER PROCEDURE get_artists_by_album
 	@ID int
 AS
@@ -1037,6 +1107,7 @@ BEGIN
 END;
 GO
 
+-- Changes the playlist privacy
 CREATE OR ALTER PROCEDURE toggle_playlist_privacy
     @user_id int,
     @playlist_id int
@@ -1052,17 +1123,7 @@ BEGIN
 END;
 GO
 
-CREATE OR ALTER FUNCTION num_playlists_user(@ID int)
-RETURNS int
-AS
-BEGIN
-    RETURN
-        (SELECT count(playlist_id)
-         FROM playlist
-         WHERE user_id = @ID);
-END;
-GO
-
+-- Gets the number of playlists the song is in
 CREATE OR ALTER FUNCTION num_playlists_song(@ID int)
 RETURNS int
 AS
@@ -1083,6 +1144,7 @@ BEGIN
 END;
 GO
 
+-- Gets the number of albums a song is in
 CREATE OR ALTER FUNCTION num_albums_song(@ID int)
     RETURNS int
 AS
@@ -1103,26 +1165,7 @@ BEGIN
 END;
 GO
 
-CREATE OR ALTER FUNCTION num_albums_artist(@ID int)
-    RETURNS int
-AS
-BEGIN
-    DECLARE @num_albums int
-
-    SELECT @num_albums = count(*)
-    FROM album_artist
-    WHERE artist_id = @ID
-
-    SELECT @num_albums =
-           CASE
-               WHEN @num_albums IS NULL THEN 0
-               ELSE @num_albums
-               END
-
-    RETURN @num_albums;
-END;
-GO
-
+-- Gets all attributes of a user by the username
 CREATE OR ALTER PROCEDURE get_user_by_username
     @username varchar(30)
 AS
@@ -1133,6 +1176,7 @@ BEGIN
 END;
 GO
 
+-- Gets all albums by a certain artist
 CREATE OR ALTER PROCEDURE view_albums
     @ID int
 AS
@@ -1147,6 +1191,7 @@ BEGIN
 END;
 GO
 
+-- Gets all album attributes by its ID
 CREATE OR ALTER PROCEDURE get_album_by_id
     @album_id int
 AS
@@ -1160,6 +1205,7 @@ BEGIN
 END;
 GO
 
+-- Gets all songs in an album
 CREATE OR ALTER PROCEDURE get_songs_by_album
     @album_id int
 AS
@@ -1170,6 +1216,7 @@ BEGIN
 END;
 GO
 
+-- Gets all genres of an album
 CREATE OR ALTER PROCEDURE get_genres_by_album
     @album_id int
 AS
@@ -1180,6 +1227,7 @@ BEGIN
 END;
 GO
 
+-- Gets all genres of a song
 CREATE OR ALTER PROCEDURE get_genres_by_song
     @song_id int
 AS
@@ -1190,6 +1238,7 @@ BEGIN
 END;
 GO
 
+-- Gets all the attributes of a genre by its name
 CREATE OR ALTER PROCEDURE get_genre_by_name
     @genre_name varchar(25)
 AS
@@ -1200,6 +1249,7 @@ BEGIN
 END;
 GO
 
+-- Adds an artist to an album
 CREATE OR ALTER PROCEDURE add_album_artist
     @album_id int,
     @artist_id int
@@ -1210,6 +1260,7 @@ BEGIN
 END;
 GO
 
+-- Adds a genre to an album
 CREATE OR ALTER PROCEDURE add_album_genre
     @album_id int,
     @genre_name varchar(25)
@@ -1220,6 +1271,7 @@ BEGIN
 END;
 GO
 
+-- Adds a song to an artist
 CREATE OR ALTER PROCEDURE add_song_artist
     @song_id int,
     @artist_id int
@@ -1230,6 +1282,7 @@ BEGIN
 END;
 GO
 
+-- Adds a genre to a song
 CREATE OR ALTER PROCEDURE add_song_genre
     @song_id int,
     @genre_name varchar(25)
@@ -1240,6 +1293,7 @@ BEGIN
 END;
 GO
 
+-- Deletes an artist by ID
 CREATE OR ALTER PROCEDURE delete_artist
     @artist_id int
 AS
@@ -1255,6 +1309,7 @@ BEGIN
 END;
 GO
 
+-- Deletes a user by ID
 CREATE OR ALTER PROCEDURE delete_user
     @user_id int
 AS
@@ -1266,6 +1321,7 @@ BEGIN
 END;
 GO
 
+-- Makes an artist account by ID
 CREATE OR ALTER PROCEDURE create_artist
     @user_id int
 AS
