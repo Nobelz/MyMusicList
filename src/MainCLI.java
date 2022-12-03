@@ -2047,7 +2047,7 @@ public class MainCLI {
 
             System.out.println();
             System.out.println((i + 1) + ": Create New Album");
-            System.out.println((i + 2) + ": Return to Album Menu");
+            System.out.println((i + 2) + ": Return to Main Menu");
             System.out.print("Select an Entry: ");
             int input = scanner.nextInt();
             scanner.nextLine();
