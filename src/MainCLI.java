@@ -144,6 +144,9 @@ public class MainCLI {
         System.out.print("Please enter your name: ");
         String name = scanner.nextLine();
 
+        if (name.isEmpty() || username.isEmpty())
+            throw new InputMismatchException("Cannot be blank");
+
         try {
             String sql = "INSERT INTO music_user(username, name) VALUES(?, ?)";
             PreparedStatement preparedStatement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
@@ -159,6 +162,10 @@ public class MainCLI {
                 return userID;
             }
 
+            return -1;
+        } catch (InputMismatchException e) {
+            System.out.println("Incorrect username and/or name input.");
+            scanner.nextLine();
             return -1;
         } catch (SQLException e) {
             try {
@@ -344,6 +351,9 @@ public class MainCLI {
         System.out.print("Please enter search keyword: ");
         String query = scanner.nextLine();
 
+        if (query.isEmpty())
+            throw new InputMismatchException("Cannot be empty");
+
         try {
             String sql = "{call search (" + user.getUserID() + ", ?, 10, 1, 'y', 'y', 'y', 'y', 'y')}";
             CallableStatement callableStatement = connection.prepareCall(sql);
@@ -439,7 +449,7 @@ public class MainCLI {
 
         System.out.println();
         System.out.println((results.length + 1) + ": Search for Something Else");
-        System.out.println((results.length + 2) + ": Return\n");
+        System.out.println((results.length + 2) + ": Return");
         try {
             System.out.print("Select an Entry: ");
             int input = scanner.nextInt();
@@ -653,7 +663,6 @@ public class MainCLI {
         System.out.println("4: Find Most Popular Songs");
         System.out.println("5: Find Highest Rated Songs");
         System.out.println("6: Return to Main Menu");
-        System.out.println();
 
         try {
             System.out.print("Select an Entry: ");
@@ -687,6 +696,7 @@ public class MainCLI {
                         if (i == 0)
                             System.out.println("No listens recorded yet.");
 
+                        System.out.print("\nPress ENTER to return to Query Menu. ");
                         scanner.nextLine();
                     } catch (NumberFormatException | InputMismatchException e) {
                         System.out.println("Incorrect menu output. Returning to Query Menu.");
@@ -953,7 +963,7 @@ public class MainCLI {
             System.out.print("Should your playlist be public? 'y' or 'n': ");
             String privacy = scanner.nextLine();
 
-            if (privacy.length() != 1 || (privacy.charAt(0) != 'y' && privacy.charAt(0) != 'n'))
+            if (name.isEmpty() || privacy.length() != 1 || (privacy.charAt(0) != 'y' && privacy.charAt(0) != 'n'))
                 throw new InputMismatchException("Incorrect input");
 
             String sql = "{call make_playlist (" + user.getUserID() + ", ?, ?)}";
@@ -1189,7 +1199,7 @@ public class MainCLI {
                 String[] entries = line.split(",");
                 int[] songEntries = new int[entries.length];
 
-                if (entries.length == 0)
+                if (line.isEmpty() || entries.length == 0)
                     throw new InputMismatchException("No entries specified");
 
                 for (int i = 0; i < entries.length; i++) {
@@ -1279,7 +1289,7 @@ public class MainCLI {
                 String[] entries = line.split(",");
                 int[] songEntries = new int[entries.length];
 
-                if (entries.length == 0)
+                if (line.isEmpty() || entries.length == 0)
                     throw new InputMismatchException("No entries specified");
 
                 for (int i = 0; i < entries.length; i++) {
@@ -1431,7 +1441,7 @@ public class MainCLI {
                 String[] entries = line.split(",");
                 int[] songEntries = new int[entries.length];
 
-                if (entries.length == 0)
+                if (line.isEmpty() || entries.length == 0)
                     throw new InputMismatchException("No entries specified");
 
                 for (int i = 0; i < entries.length; i++) {
@@ -1851,6 +1861,9 @@ public class MainCLI {
         System.out.print("Please enter the username of the user you want to recommend the song to: ");
         String username = scanner.nextLine();
 
+        if (username.isEmpty())
+            throw new InputMismatchException("Username cannot be blank");
+
         User toUser;
         try {
             toUser = MMLTools.getUser(connection, username);
@@ -1953,6 +1966,8 @@ public class MainCLI {
             if (line.charAt(0) == 'y') {
                 System.out.println("Leave your review below, then press ENTER: ");
                 review = scanner.nextLine();
+                if (review.isEmpty())
+                    throw new InputMismatchException("Review cannot be blank");
             }
 
             String sql = "{call make_review (" + user.getUserID() + ", " + song.getSongID() + ", " + input + ", ?)}";
@@ -2071,7 +2086,10 @@ public class MainCLI {
             String line = scanner.nextLine();
             String[] entries = line.split(",");
 
-            if (entries.length == 0)
+            if (name.isEmpty())
+                throw new InputMismatchException("Name cannot be blank");
+
+            if (line.isEmpty() || entries.length == 0)
                 throw new InputMismatchException("No genres specified");
 
             HashSet<Genre> genreSet = new HashSet<>();
@@ -2171,7 +2189,10 @@ public class MainCLI {
             String line = scanner.nextLine();
             String[] entries = line.split(",");
 
-            if (entries.length == 0)
+            if (name.isEmpty())
+                throw new InputMismatchException("Name cannot be blank");
+
+            if (line.isEmpty() || entries.length == 0)
                 throw new InputMismatchException("No genres specified");
 
             HashSet<Genre> genreSet = new HashSet<>();
