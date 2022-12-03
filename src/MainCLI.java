@@ -84,7 +84,7 @@ public class MainCLI {
             }
             return 0;
         } catch (NumberFormatException | InputMismatchException e) {
-            System.out.println("Username incorrect or not found. Please try again or register.");
+            System.out.println("Incorrect output. Please try again.");
             scanner = new Scanner(System.in);
             scanner.nextLine();
             return -1;
@@ -144,10 +144,10 @@ public class MainCLI {
         System.out.print("Please enter your name: ");
         String name = scanner.nextLine();
 
-        if (name.isEmpty() || username.isEmpty())
-            throw new InputMismatchException("Cannot be blank");
-
         try {
+            if (name.isEmpty() || username.isEmpty())
+                throw new InputMismatchException("Cannot be blank");
+
             String sql = "INSERT INTO music_user(username, name) VALUES(?, ?)";
             PreparedStatement preparedStatement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
 
@@ -163,7 +163,7 @@ public class MainCLI {
             }
 
             return -1;
-        } catch (InputMismatchException e) {
+        } catch (NumberFormatException | InputMismatchException e) {
             System.out.println("Incorrect username and/or name input.");
             scanner.nextLine();
             return -1;
