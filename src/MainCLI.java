@@ -268,6 +268,7 @@ public class MainCLI {
 
                     return 1;
                 case 5:
+                    clearConsole();
                     System.out.print("Are you sure you want to delete your account? All songs, albums, playlists, " +
                             "and stats will be deleted. 'y' or 'n': ");
                     String line = scanner.nextLine();
@@ -438,7 +439,7 @@ public class MainCLI {
 
         System.out.println();
         System.out.println((results.length + 1) + ": Search for Something Else");
-        System.out.println((results.length + 2) + ": Return");
+        System.out.println((results.length + 2) + ": Return\n");
         try {
             System.out.print("Select an Entry: ");
             int input = scanner.nextInt();
@@ -549,6 +550,7 @@ public class MainCLI {
                 System.out.println("No Playlists to Display");
             }
 
+            System.out.println();
             System.out.println((i + 1) + ": Create New Playlist");
             System.out.println((i + 2) + ": Return to Main Menu");
             System.out.print("Select an Entry: ");
@@ -721,6 +723,7 @@ public class MainCLI {
                         if (i == 0)
                             System.out.println("No listens recorded yet.");
 
+                        System.out.print("\nPress ENTER to return to Query Menu. ");
                         scanner.nextLine();
                     } catch (NumberFormatException | InputMismatchException e) {
                         System.out.println("Incorrect menu output. Returning to Query Menu.");
@@ -757,6 +760,7 @@ public class MainCLI {
                         if (i == 0)
                             System.out.println("No listens recorded yet.");
 
+                        System.out.print("\nPress ENTER to return to Query Menu. ");
                         scanner.nextLine();
                     } catch (NumberFormatException | InputMismatchException e) {
                         System.out.println("Incorrect menu output. Returning to Query Menu.");
@@ -793,6 +797,7 @@ public class MainCLI {
                         if (i == 0)
                             System.out.println("No listens recorded yet.");
 
+                        System.out.print("\nPress ENTER to return to Query Menu. ");
                         scanner.nextLine();
                     } catch (NumberFormatException | InputMismatchException e) {
                         System.out.println("Incorrect menu output. Returning to Query Menu.");
@@ -829,6 +834,7 @@ public class MainCLI {
                         if (i == 0)
                             System.out.println("No listens recorded yet.");
 
+                        System.out.print("\nPress ENTER to return to Query Menu. ");
                         scanner.nextLine();
                     } catch (NumberFormatException | InputMismatchException e) {
                         System.out.println("Incorrect menu output. Returning to Query Menu.");
@@ -904,6 +910,7 @@ public class MainCLI {
                     }
                     return 0;
                 case 3:
+                    clearConsole();
                     System.out.print("Are you sure you want to delete this artist account? All songs and albums " +
                             "will be deleted, even if they have collaborating artists. 'y' or 'n': ");
                     String line = scanner.nextLine();
@@ -1102,6 +1109,7 @@ public class MainCLI {
                     System.out.printf((i + 1) + ": %-50s %-12s\n", song.getName(), song.getDuration());
             }
         }
+        System.out.println();
         if (playlist.isCanEdit()) {
             if (playlist.getNumSongs() > 0) {
                 System.out.println((playlist.getNumSongs() + 1) + ": Remove Songs");
@@ -1130,6 +1138,7 @@ public class MainCLI {
                 return -2;
             else if (input == playlist.getNumSongs() + 3 ||
                     (input == playlist.getNumSongs() + 2 && playlist.getNumSongs() == 0)) {
+                clearConsole();
                 System.out.print("Are you sure you want to delete this playlist? 'y' or 'n': ");
                 String line = scanner.nextLine();
 
@@ -1149,6 +1158,7 @@ public class MainCLI {
                 return -2;
             } else if (input == playlist.getNumSongs() + 2 ||
                     (input == playlist.getNumSongs() + 1 && playlist.getNumSongs() == 0)) {
+                clearConsole();
                 if (playlist.isPublic())
                     System.out.print("Are you sure you want to make this playlist private? 'y' or 'n': ");
                 else
@@ -1240,6 +1250,8 @@ public class MainCLI {
                         System.out.printf((i + 1) + ": %-50s %-12s\n", song.getName(), song.getDuration());
                 }
             }
+
+            System.out.println();
             if (songs.length > 0) {
                 System.out.println((songs.length + 1) + ": Remove Songs");
                 System.out.println((songs.length + 2) + ": Add Song");
@@ -1369,6 +1381,7 @@ public class MainCLI {
                 }
             }
 
+            System.out.println();
             if (album.isCanEdit()) {
                 if (album.getNumSongs() > 0) {
                     System.out.println((album.getNumSongs() + 1) + ": Remove Songs");
@@ -1394,6 +1407,7 @@ public class MainCLI {
                 return -2;
             else if (input == album.getNumSongs() + 2 ||
                     (input == album.getNumSongs() + 1 && album.getNumSongs() == 0)) {
+                clearConsole();
                 System.out.print("Are you sure you want to delete this album? 'y' or 'n': ");
                 String line = scanner.nextLine();
 
@@ -1718,6 +1732,7 @@ public class MainCLI {
 
             if (recommendations.length == 0) {
                 System.out.println("No user recommendations yet. Come back later!");
+                scanner.nextLine();
                 return -2;
             }
 
@@ -1732,6 +1747,7 @@ public class MainCLI {
                     System.out.printf((i + 1) + ": %-50s %-20s\n", recommendation.getSong().getName(),
                             recommendation.getFromUser().getName());
             }
+            System.out.println();
             System.out.println((recommendations.length + 1) + ": Return to Recommendation Menu");
             System.out.print("Select an Entry: ");
             int input = scanner.nextInt();
@@ -1771,6 +1787,7 @@ public class MainCLI {
 
             if (recommendations.length == 0) {
                 System.out.println("No auto-generated recommendations yet. Listen to songs first!");
+                scanner.nextLine();
                 return -2;
             }
 
@@ -1878,8 +1895,8 @@ public class MainCLI {
             int input = scanner.nextInt();
             scanner.nextLine();
 
-            if (input < 0)
-                throw new InputMismatchException("Number of listens cannot be less than 0.");
+            if (input < 1)
+                throw new InputMismatchException("Number of listens cannot be less than 1.");
 
             String sql = "{call add_listens (" + user.getUserID() + ", " + song.getSongID() + ", " + input + ")}";
             CallableStatement callableStatement = connection.prepareCall(sql);
@@ -2013,6 +2030,7 @@ public class MainCLI {
                 System.out.println("No Albums to Display");
             }
 
+            System.out.println();
             System.out.println((i + 1) + ": Create New Album");
             System.out.println((i + 2) + ": Return to Album Menu");
             System.out.print("Select an Entry: ");
